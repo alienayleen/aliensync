@@ -1142,29 +1142,26 @@ foliate-view {
 .tapzones-wrap .tapzone.mid{ width:30%; }
 .tapzones-wrap .tapzone.right{ width:35%; }
 
-/* ============================
-   모바일/창 축소에서 '오른쪽 쏠림' 방지
-   ============================ */
-#viewerScrollContainer.epub-mode{
-  width:100vw !important;
-  left:0 !important;
-  right:0 !important;
-  margin:0 !important;
+/* =========================
+   Paged(좌우넘김) 모드 폭/쏠림 Fix
+   ========================= */
+
+/* paged-mode일 때 컨테이너가 "진짜 기준" */
+#viewerScrollContainer.epub-mode.paged-mode {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;   /* JS가 scrollLeft 제어한다면 hidden */
+  overflow-y: hidden;
 }
 
-#viewerScrollContainer.epub-mode .epub-content.paged-view{
-  max-width: 100% !important;
+/* 기존 max-width(1100px 등)로 인해 반갈이에서 쏠림이 생김 -> 해제 */
+#viewerScrollContainer.epub-mode.paged-mode .epub-content.paged-view {
+  max-width: none !important;
   width: 100% !important;
-  margin: 0 auto !important;
+  box-sizing: border-box;
+  /* column-width는 JS가 주입할 것(컨테이너 폭 기준) */
+  column-gap: 0 !important;
+  margin: 0 !important;        /* 가운데 정렬 때문에 생기는 미묘한 오프셋 제거 */
   padding-left: 16px !important;
   padding-right: 16px !important;
-  box-sizing: border-box !important;
-}
-
-/* 아주 좁은 화면에서 padding 더 줄이기 */
-@media (max-width: 480px){
-  #viewerScrollContainer.epub-mode .epub-content.paged-view{
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-  }
 }
