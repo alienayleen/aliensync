@@ -41,33 +41,58 @@ function handleMessage(event) {
     }
 }
 
-// [핵심: 클릭 핸들러] - 양옆 30%는 이동만, 가운데만 메뉴 토글
+// [1. 클릭 핸들러 수정] - 클래스 이름을 .show로 통일
 window.handleViewerClick = function(event) {
-    if (event.target.closest('.viewer-controls') || event.target.closest('.btn-icon')) return;
+    // 버튼이나 컨트롤 영역을 누른 거라면 메뉴를 끄지 않음
+    if (event.target.closest('.viewer-controls') || event.target.closest('.btn-icon')) {
+        return;
+    }
 
     const clickX = event.clientX;
     const screenWidth = window.innerWidth;
     const viewerControls = document.getElementById('viewerControls');
+    
+    // 중앙 40% 영역 계산
     const sideZoneWidth = screenWidth * 0.3; 
 
     if (clickX < sideZoneWidth) {
-        navigateViewer(-1); // 왼쪽: 이전
+        // 왼쪽 30%: 이전 페이지 이동만 함 (메뉴 안 건드림)
+        if (typeof navigateViewer === 'function') navigateViewer(-1);
     } else if (clickX > screenWidth - sideZoneWidth) {
-        navigateViewer(1);  // 오른쪽: 다음
+        // 오른쪽 30%: 다음 페이지 이동만 함 (메뉴 안 건드림)
+        if (typeof navigateViewer === 'function') navigateViewer(1);
     } else {
-        viewerControls.classList.toggle('active'); // 가운데: 메뉴 켜기/끄기
+        // 가운데 40%: 메뉴(검정 바) 토글
+        // 기존에 .show가 있으면 제거, 없으면 추가
+        viewerControls.classList.toggle('show');
     }
 };
 
-// [핵심: 글자 크기 조절 함수]
+// [2. 글자 크기 조절 수정] - 텍스트 모드일 때만 작동하도록 강제
 window.changeFontSize = function(delta) {
-    const container = document.getElementById('viewerScrollContainer');
-    if (!container) return;
-    let curSize = parseInt(window.getComputedStyle(container).fontSize) || 18;
-    container.style.fontSize = (curSize + delta) + "px";
-    showToast(`글자 크기: ${container.style.fontSize}`);
-};
+    // 텍스트가 들어가는 모든 가능한 컨테이너를 타겟팅
+    const containers = [
+        document.getElementById('viewerScrollContainer'),
+        document.querySelector('.inner-content'),
+        document.querySelector('.epub-content')
+    ];
 
+    containers.forEach(container => {
+        if (container) {
+            let curSize = parseInt(window.getComputedStyle(container).fontSize) || 18;
+            let newSize = curSize + delta;
+            
+            // 12px ~ 50px 사이로 제한
+            if (newSize < 12) newSize = 12;
+            if (newSize > 50) newSize = 50;
+            
+            container.style.fontSize = newSize + 'px';
+            container.style.setProperty('font-size', newSize + 'px', 'important');
+        }
+    });
+    
+    if (typeof showToast === 'function') showToast(`글자 크기 조절됨`);
+};
 // [데이터 로드]
 async function refreshDB(forceId = null, silent = false, bypassCache = false) {
     const loader = document.getElementById('pageLoader');
