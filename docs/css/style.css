@@ -1116,3 +1116,47 @@ foliate-view {
   justify-content: center !important;
   align-items: center !important;
 }
+
+/* ============================
+   Paged 탭존(좌/중앙/우) 오버레이
+   ============================ */
+.tapzones-wrap{
+  position:absolute;
+  inset:0;
+  z-index: 2500;          /* 본문 위, 컨트롤(5000) 아래 */
+  pointer-events:auto;
+  display:flex;
+}
+.tapzones-wrap .tapzone{
+  height:100%;
+}
+.tapzones-wrap .tapzone.left{ width:35%; }
+.tapzones-wrap .tapzone.mid{ width:30%; }
+.tapzones-wrap .tapzone.right{ width:35%; }
+
+/* ============================
+   모바일/창 축소에서 '오른쪽 쏠림' 방지
+   ============================ */
+#viewerScrollContainer.epub-mode{
+  width:100vw !important;
+  left:0 !important;
+  right:0 !important;
+  margin:0 !important;
+}
+
+#viewerScrollContainer.epub-mode .epub-content.paged-view{
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  box-sizing: border-box !important;
+}
+
+/* 아주 좁은 화면에서 padding 더 줄이기 */
+@media (max-width: 480px){
+  #viewerScrollContainer.epub-mode .epub-content.paged-view{
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
