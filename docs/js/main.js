@@ -450,49 +450,76 @@ window.addEventListener('DOMContentLoaded', () => {
     const LEFT = 35;
     const RIGHT = 65;
 
-    const toggleBars = (e) => {
-      // 버튼/인풋/컨트롤 클릭은 무시
+    // 컨트롤 엘리먼트 찾기 (id / class 둘 다 대응)
+  const getControlsEl = () =>
+    document.getElementById('viewerControls') ||
+    document.querySelector('.viewer-controls');
+
+  // "탭" 판정용(스크롤/드래그와 구분)
+  let startX = 0;
+  let startY = 0;
+  let startT = 0;
+
+  // 터치 시작: 좌표만 기록 (여기서는 절대 preventDefault/stopPropagation 하지 않음)
+  scrollEl.addEventListener(
+    'touchstart',
+    (e) => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      startX = t.clientX;
+      startY = t.clientY;
+      startT = Date.now();
+    },
+    { passive: true, capture: true }
+  );
+
+  // 터치 종료: "거의 안 움직였으면" 탭으로 보고 중앙 탭만 토글
+  scrollEl.addEventListener(
+    'touchend',
+    (e) => {
+      const t = e.changedTouches && e.changedTouches[0];
+      if (!t) return;
+
+      const dx = Math.abs(t.clientX - startX);
+      const dy = Math.abs(t.clientY - startY);
+      const dt = Date.now() - startT;
+
+      // 드래그/스크롤이면 무시 (값은 필요시 조절)
+      const isTap = dx < 10 && dy < 10 && dt < 500;
+      if (!isTap) return;
+
+      const xPercent = (t.clientX / window.innerWidth) * 100;
+
+      // 중앙만 토글, 좌우는 토글 금지
+      if (xPercent >= LEFT && xPercent <= RIGHT) {
+        const controls = getControlsEl();
+        if (controls) controls.classList.toggle('show');
+        e.preventDefault?.();
+        e.stopPropagation?.();
+      }
+    },
+    { passive: false, capture: true }
+  );
+
+  // 데스크톱 클릭도 동일 규칙
+  scrollEl.addEventListener(
+    'click',
+    (e) => {
+      // 버튼/인풋 클릭은 무시
       const t = e.target;
       if (t && (t.tagName === 'BUTTON' || t.tagName === 'INPUT' || t.closest('button') || t.closest('input'))) return;
 
-      const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
-      const xPercent = (clientX / window.innerWidth) * 100;
-
-      // 중앙만 토글
+      const xPercent = (e.clientX / window.innerWidth) * 100;
       if (xPercent >= LEFT && xPercent <= RIGHT) {
-        const controls = document.getElementById('viewerControls');
+        const controls = getControlsEl();
         if (controls) controls.classList.toggle('show');
-
-        // 중앙 탭은 다른 클릭으로 새지 않게
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault?.();
+        e.stopPropagation?.();
       }
-    };
-
-    scrollEl.addEventListener('click', toggleBars, true);
-    scrollEl.addEventListener('touchstart', toggleBars, { passive: false, capture: true });
-  } 
-
-  // 2. 기존 로직 (handshake 등)
-  window.addEventListener("message", handleMessage, false);
-
-  const verEl = document.getElementById('viewerVersionDisplay');
-  if (verEl) verEl.innerText = `Viewer Version: ${VIEWER_VERSION}`;
-
-  if (API.isConfigured()) {
-    refreshDB(null, true);
-    loadDomains();
-  } else {
-    setTimeout(() => {
-      if (!API.isConfigured()) {
-        document.getElementById('configModal').style.display = 'flex';
-      } else {
-        refreshDB(null, true);
-      }
-      loadDomains();
-    }, 1000);
-  }
-});
+    },
+    true
+  );
+}
 
 
 // 🚀 Expose Globals for HTML onclick & Modules
