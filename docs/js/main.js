@@ -120,3 +120,10 @@ window.refreshDB = async function(f, s, b) {
 };
 
 window.addEventListener('DOMContentLoaded', function() { if (API.isConfigured()) window.refreshDB(); });
+
+// 파일 맨 하단에 추가
+window.switchTab = switchTab;
+window.filterData = filterData;
+window.handleOpenEpisodes = handleOpenEpisodes;
+window.saveCurrentBookmark = saveCurrentBookmark;
+window.handleViewerClick = handleViewerClick;
