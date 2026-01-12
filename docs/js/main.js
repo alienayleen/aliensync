@@ -25,41 +25,6 @@ let allSeries = [];
 // ============================================================
 
 
-const viewerContent = document.getElementById('viewerContent');
-if (viewerContent) {
-    viewerContent.addEventListener('click', handleInteraction, true);
-    viewerContent.addEventListener('touchstart', handleInteraction, { passive: false });
-}
-    
-    // Listener for Zero-Config (Tampermonkey Injection)
-    window.addEventListener("message", handleMessage, false);
-    
-    // [New] Initialize Version Display
-    const el = document.getElementById('viewerVersionDisplay');
-    if(el) el.innerText = `Viewer Version: ${VIEWER_VERSION}`;
-    
-    // Initial Load Check
-    if (API.isConfigured()) {
-        showToast("🚀 저장된 설정으로 연결합니다...");
-        refreshDB(null, true);
-        // Load Saved Domains
-        loadDomains();
-    } else {
-        // Not configured yet. Wait for injection or manual input.
-        // We set a small timeout to check formatting injection/manual
-        setTimeout(() => {
-            if (!API.isConfigured()) {
-                document.getElementById('configModal').style.display = 'flex';
-            } else {
-                 showToast("🚀 저장된 설정으로 연결합니다...");
-                 refreshDB(null, true);
-            }
-            loadDomains();
-        }, 1000);
-    }
-});
-
-
 /**
  * UserScript(Tampermonkey)로부터의 설정 주입 메시지를 처리합니다.
  * Zero-Config: 별도 설정 없이 바로 서버 URL과 폴더 ID를 수신하여 설정합니다.
@@ -472,7 +437,13 @@ function toggleSettings() {
 
 // [수정] main.js 초기화 블록
 window.addEventListener('DOMContentLoaded', () => {
-    
+
+    const viewerContent = document.getElementById('viewerContent');
+if (viewerContent && typeof handleInteraction === 'function') {
+    viewerContent.addEventListener('click', handleInteraction, true);
+    viewerContent.addEventListener('touchstart', handleInteraction, { passive: false });
+}
+
     // 1. 사이드 클릭 시 검정 바(UI) 호출 차단 로직 (최상단에 배치)
     document.addEventListener('click', function(e) {
         const xPercent = (e.clientX / window.innerWidth) * 100;
