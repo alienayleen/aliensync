@@ -1,5 +1,5 @@
 /**
- * 🚀 AlienSync Frontend - Main Controller
+ * 🚀 TokiSync Frontend - Main Controller
  * - Handles Initialization
  * - Config Handshake (Zero-Config)
  * - Grid Rendering
@@ -449,16 +449,85 @@ function bindViewerContentDelegates() {
 
   viewerContent.__tokiBound = true;
 
-  const forward = (e) => {
+  // Helper: determine if we are in scroll mode (image scroll or epub scroll)
+  const isScrollMode = () => {
+    const vc = viewerContent;
+    if (vc && vc.classList && vc.classList.contains('scroll-mode')) return true;
+
+    const vsc = document.getElementById('viewerScrollContainer');
+    if (vsc && vsc.classList) {
+      if (vsc.classList.contains('scroll-mode')) return true;
+      if (vsc.classList.contains('epub-mode') && !vsc.classList.contains('paged-mode')) return true;
+    }
+
+    return false;
+  };
+
+  const getXPercent = (e) => {
+    const clientX = e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX;
+    if (!clientX || !window.innerWidth) return 50;
+    return (clientX / window.innerWidth) * 100;
+  };
+
+  const shouldIgnoreTarget = (e) => {
+    const t = e.target;
+    if (!t) return false;
+    // Ignore clicks on actual UI elements
+    return Boolean(
+      t.closest &&
+        (t.closest('button') ||
+          t.closest('input') ||
+          t.closest('a') ||
+          t.closest('.viewer-header') ||
+          t.closest('.viewer-footer') ||
+          t.closest('.viewer-controls'))
+    );
+  };
+
+  const toggleBars = () => {
+    const controls = getViewerControlsEl();
+    if (controls) controls.classList.toggle('show');
+  };
+
+  const zoneHandler = (e) => {
+    // 1) If viewer.js provides its own handler, let it run first.
     if (typeof window.handleInteraction === 'function') {
       window.handleInteraction(e);
+      // If handleInteraction already consumed the event, do not double-handle.
+      if (e.defaultPrevented) return;
+    }
+
+    // 2) Our fallback: only in paged (non-scroll) modes.
+    if (isScrollMode()) return;
+    if (shouldIgnoreTarget(e)) return;
+
+    const x = getXPercent(e);
+    const LEFT = 30;
+    const RIGHT = 70;
+
+    // Center: toggle bars
+    if (x >= LEFT && x <= RIGHT) {
+      toggleBars();
+      e.preventDefault?.();
+      e.stopPropagation?.();
+      return;
+    }
+
+    // Sides: page navigation (if available)
+    if (typeof window.navigateViewer === 'function') {
+      if (x < LEFT) window.navigateViewer(-1);
+      else if (x > RIGHT) window.navigateViewer(1);
+
+      // Optionally show bars briefly? (leave as-is)
+      e.preventDefault?.();
+      e.stopPropagation?.();
     }
   };
 
-  viewerContent.addEventListener('click', forward, true);
-  viewerContent.addEventListener('touchstart', (e) => forward(e), { passive: false, capture: true });
+  // Capture phase so we can reliably catch taps even if content is layered.
+  viewerContent.addEventListener('click', zoneHandler, true);
+  viewerContent.addEventListener('touchstart', zoneHandler, { passive: false, capture: true });
 }
-
 function bindTextCenterTap(container) {
   if (!container || container.__tokiTextBound) return;
   container.__tokiTextBound = true;
@@ -546,88 +615,32 @@ function aliasTextTouchZones() {
 
 // [수정] main.js 초기화 블록
 window.addEventListener('DOMContentLoaded', () => {
+  // Bind viewer interactions (delegated + mutation-safe)
+  watchViewerDomAndBind();
 
- // ✅ 텍스트(EPUB/소설) 좌우넘김(paged) + 스크롤(scroll) 공통 탭처리
-(() => {
-  const LEFT = 35;
-  const RIGHT = 65;
-
-  const isTextViewerEvent = (e) => {
-    const t = e.target;
-    if (!t) return false;
-
-    // 텍스트 뷰어 영역에서만 동작시키기 (웹툰 이미지뷰어 등 영향 최소화)
-    return !!(
-      t.closest('#viewerScrollContainer') ||
-      t.closest('.epub-content') ||
-      t.closest('foliate-view') ||
-      t.closest('.book-container') ||
-      t.closest('.viewer-page-wrapper.text-mode')
-    );
-  };
-
-  const onTap = (e) => {
-    if (!isTextViewerEvent(e)) return;
-
-    // 버튼/인풋/링크 등 UI 클릭은 무시
-    const t = e.target;
-    if (t && (t.tagName === 'BUTTON' || t.tagName === 'INPUT' || t.tagName === 'A' ||
-              t.closest('button') || t.closest('input') || t.closest('a'))) return;
-
-    const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
-    if (typeof clientX !== 'number') return;
-
-    const xPercent = (clientX / window.innerWidth) * 100;
-
-    // 중앙: 검정바 토글
-    if (xPercent >= LEFT && xPercent <= RIGHT) {
-      const controls = document.getElementById('viewerControls');
-      if (controls) controls.classList.toggle('show');
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-
-    // 좌/우: 페이지 이동
-    const dir = (xPercent < LEFT) ? -1 : 1;
-
-    if (typeof window.navigateViewer === 'function') {
-      window.navigateViewer(dir);
-    }
-
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  // 캡처링으로 최상단에서 먼저 잡아야 paged 모드에서도 100% 먹음
-  document.addEventListener('touchstart', onTap, { passive: false, capture: true });
-  document.addEventListener('click', onTap, true);
-})();
-
-
-  // ==========================================================
-  // Existing initialization (handshake, config, etc.)
-  // ==========================================================
+  // Handshake
   window.addEventListener('message', handleMessage, false);
 
   const verEl = document.getElementById('viewerVersionDisplay');
   if (verEl) verEl.innerText = `Viewer Version: ${VIEWER_VERSION}`;
 
+  // Existing boot logic
   if (API.isConfigured()) {
-    refreshDB(null, true);
     loadDomains();
+    refreshDB(null, true);
   } else {
     setTimeout(() => {
       if (!API.isConfigured()) {
-        const modal = document.getElementById('configModal');
-        if (modal) modal.style.display = 'flex';
+        const cm = document.getElementById('configModal');
+        if (cm) cm.style.display = 'flex';
       } else {
         refreshDB(null, true);
       }
       loadDomains();
     }, 1000);
   }
-});// 🚀 Expose Globals for HTML onclick & Modules
+});
+// 🚀 Expose Globals for HTML onclick & Modules
 window.refreshDB = refreshDB;
 window.toggleSettings = toggleSettings;
 window.switchTab = switchTab;
