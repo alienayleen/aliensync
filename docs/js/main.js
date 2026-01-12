@@ -343,6 +343,29 @@ function filterData() {
     });
 }
 
+
+// [1] 소설 글자 크기 조절 (delta: 0.1 또는 -0.1)
+window.changeFontSize = function(delta) {
+    const root = document.documentElement;
+    let currentSize = parseFloat(getComputedStyle(root).getPropertyValue('--novel-font-size'));
+    let newSize = Math.max(0.8, Math.min(2.5, currentSize + delta)); // 0.8rem ~ 2.5rem 제한
+    root.style.setProperty('--novel-font-size', `${newSize}rem`);
+    showToast(`글자 크기: ${Math.round(newSize * 100)}%`);
+};
+
+// [2] 소설 스크롤 모드 토글
+window.toggleTextScrollMode = function() {
+    const container = document.querySelector('.book-container');
+    if (!container) return;
+    
+    const isScroll = container.classList.toggle('scroll-mode');
+    showToast(isScroll ? "📜 스크롤 모드" : "📖 페이지 모드");
+    
+    // 버튼 UI 업데이트용 (버튼에 id="textScrollBtn"이 있다고 가정)
+    const btn = document.getElementById('textScrollBtn');
+    if (btn) btn.classList.toggle('active', isScroll);
+};
+
 // ============================================================
 // 5. Settings / Config Logic
 // ============================================================
