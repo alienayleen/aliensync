@@ -39,9 +39,12 @@ const handleInteraction = (e) => {
         if (xPercent < 35) navigateViewer(-1);
         else navigateViewer(1);
     } else {
-        // 중앙 30% 영역: 이 구역을 눌러야만 검정 바(UI) 토글 함수가 작동함
-        if (typeof toggleViewerControls === 'function') toggleViewerControls();
+    // 중앙 30% 영역: 함수 호출 대신 직접 'show' 클래스를 토글합니다.
+    const controls = document.getElementById('viewerControls');
+    if (controls) {
+        controls.classList.toggle('show'); // 검정 바가 나오고 들어가는 핵심 로직
     }
+}
 };
 
 const viewerContent = document.getElementById('viewerContent');
