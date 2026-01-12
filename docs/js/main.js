@@ -521,6 +521,30 @@ window.addEventListener('DOMContentLoaded', () => {
   );
 }
 
+      // 2. 기존 로직 (handshake 등)
+  window.addEventListener("message", handleMessage, false);
+
+  const verEl = document.getElementById('viewerVersionDisplay');
+  if (verEl) verEl.innerText = `Viewer Version: ${VIEWER_VERSION}`;
+
+  // 도메인/환경 설정 로드
+  loadDomains();
+
+  if (API.isConfigured()) {
+    refreshDB(null, true);
+  } else {
+    setTimeout(() => {
+      if (!API.isConfigured()) {
+        const cm = document.getElementById('configModal');
+        if (cm) cm.style.display = 'flex';
+      } else {
+        refreshDB(null, true);
+      }
+      loadDomains();
+    }, 1000);
+  }
+});
+
 
 // 🚀 Expose Globals for HTML onclick & Modules
 window.refreshDB = refreshDB;
@@ -557,3 +581,5 @@ async function loadHistory() {
         });
     } catch (e) { console.log("기록 로드 실패"); }
 }
+
+                        
