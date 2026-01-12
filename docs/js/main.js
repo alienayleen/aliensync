@@ -220,51 +220,35 @@ function renderGrid(seriesList) {
     }
 
     allSeries.forEach((series, index) => {
-        try {
-            const card = document.createElement('div');
-            card.className = 'card';
+        allSeries = Array.isArray(seriesList) ? seriesList : [];
+    const grid = document.getElementById('grid');
+    if (!grid) return;
+    grid.innerHTML = '';
 
-            const meta = series.metadata || { status: 'Unknown', authors: [] };
-            const authors = meta.authors || [];
-            const status = meta.status || 'Unknown';
-            
-            // Thumbnail Logic: Base64 -> DriveID -> Default
-            let thumb = NO_IMAGE_SVG;
-            if (series.thumbnail && series.thumbnail.startsWith("data:image")) {
-                thumb = series.thumbnail;
-            } else if (series.thumbnailId) {
-                // High-performance Drive Thumbnail URL
-                thumb = `https://lh3.googleusercontent.com/d/${series.thumbnailId}=s400`;
-            } else if (series.thumbnail && series.thumbnail.startsWith("http")) {
-                thumb = series.thumbnail;
-            }
-            const dynamicUrl = getDynamicLink(series);
-            const hasContentId = !!series.sourceId;
-
-            card.innerHTML = `
-                <div class="thumb-wrapper">
-                    <img src="${thumb}" class="thumb" onerror="this.src='${NO_IMAGE_SVG}'">
-                    <div class="overlay">
-                        <a href="${series.id ? 'https://drive.google.com/drive/u/0/folders/' + series.id : '#'}" target="_blank" class="btn btn-drive">📂 드라이브</a>
-                        <button onclick="openEpisodeList('${series.id}', '${series.name}', ${index})" class="btn" style="background:#444; color:white;">📄 목록</button>
-                        ${hasContentId ? `
-                            <a href="${dynamicUrl}" target="_blank" class="btn btn-site">🌐 사이트</a>
-                        ` : ''}
-                    </div>
+    allSeries.forEach((series, index) => {
+        const thumb = series.thumbnailId ? `https://googleusercontent.com/profile/picture/0${series.thumbnailId}=s400` : NO_IMAGE_SVG;
+        const meta = series.metadata || {};
+        const category = series.category || meta.category || 'Webtoon'; 
+        
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <div class="thumb-wrapper">
+                <img src="${thumb}" class="thumb" onerror="this.src='${NO_IMAGE_SVG}'">
+                <div class="overlay">
+                    <button onclick="saveReadHistory('${series.id}', '${series.name.replace(/'/g, "\\'")}'); openEpisodeList('${series.id}', '${series.name}', ${index})" class="btn" style="background:#444; color:white;">📄 목록</button>
                 </div>
-                <div class="info">
-                    <div class="title" title="${series.name}">${series.name}</div>
-                    <span class="author" title="${authors.join(', ')}">${authors.join(', ') || '작가 미상'}</span>
-                    <div class="meta">
-                        <span class="badge ${status === 'COMPLETED' ? 'completed' : 'ongoing'}">${status}</span>
-                        <span class="count">${series.booksCount || 0}권</span>
-                    </div>
+            </div>
+            <div class="info">
+                <div class="title" style="font-weight:bold; font-size:15px; margin-bottom:2px;">${series.name}</div>
+                <div class="author" style="font-size:12px; color:#aaa; margin-bottom:8px;">${meta.authors?.join(', ') || '작가 미상'}</div>
+                <div class="meta" style="display:flex; justify-content:space-between; border-top:1px solid #333; padding-top:8px;">
+                    <span style="font-size:11px; font-weight:bold; color:var(--accent);">${category.toUpperCase()}</span>
+                    <span style="font-size:11px; color:#eee;">${meta.status || 'ONGOING'} ${series.booksCount || 0}권</span>
                 </div>
-            `;
-            grid.appendChild(card);
-        } catch (err) {
-            console.error("Render Error:", err);
-        }
+            </div>
+        `;
+        grid.appendChild(card);
     });
 }
 
