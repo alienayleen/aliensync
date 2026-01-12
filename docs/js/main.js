@@ -1,5 +1,5 @@
 /**
- * 🚀 TokiSync - Final Absolute Fix (Error & Logic)
+ * 🚀 TokiSync - Final Absolute Fix (Wait & Bind)
  */
 var NO_IMAGE_SVG = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%22%20y%3D%2250%22%20font-family%3D%22Arial%22%20font-size%3D%2212%22%20fill%3D%22%23666%22%20text-anchor%3D%22middle%22%20dy%3D%22.3em%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E";
 var DEFAULT_DOMAINS = { newtoki: '469', manatoki: '469', booktoki: '469' };
@@ -7,43 +7,49 @@ var DEFAULT_DOMAINS = { newtoki: '469', manatoki: '469', booktoki: '469' };
 window.allSeries = [];
 window.currentTab = 'all';
 
-// [1. 최근 본 목록 및 북마크 로직] - TypeError 방지를 위해 상단 배치
+// [1. 최근 본 목록 렌더링] - TypeError 방지를 위해 최상단 선언
 window.renderRecentList = async function() {
     try {
         var response = await API.request('view_get_bookmarks', { folderId: API.folderId });
         var container = document.getElementById('recent-list');
-        if (!container || !Array.isArray(response)) return;
-        if (response.length === 0) { container.innerHTML = ''; return; }
+        if (!container || !Array.isArray(response) || response.length === 0) return;
 
         container.innerHTML = '<h3>🕒 최근 본 작품</h3><div class="recent-grid"></div>';
+        var grid = container.querySelector('.recent-grid');
         response.forEach(function(item) {
             var div = document.createElement('div');
             div.className = 'recent-card';
             div.onclick = function() { window.handleOpenEpisodes(item.seriesId, item.title.replace(/'/g, "\\'"), 0); };
             div.innerHTML = '<div class="recent-title" style="font-weight:bold;">' + item.title + '</div><div class="recent-ep">' + (item.episode || "회차미상") + '</div>';
-            container.querySelector('.recent-grid').appendChild(div);
+            grid.appendChild(div);
         });
-    } catch (e) { console.warn("Recent list load failed (Check GAS deployment ID)"); }
+    } catch (e) {
+        console.warn("북마크 로드 실패: 설정창의 GAS Deployment ID를 최신 버전으로 업데이트하세요.");
+    }
 };
 
-// [2. 목록 열기 핸들러] - 목록 열기 버튼이 안 눌리는 문제 해결
+// [2. 목록 열기 핸들러] - 라이브러리 함수가 준비될 때까지 기다림
 window.handleOpenEpisodes = function(id, name, index) {
     window.currentSeriesId = id;
     window.currentSeriesTitle = name;
     
-    // index.js에서 정의된 원래 함수 호출 시도
-    if (window.openEpisodeList) {
+    // 1. 즉시 실행 시도
+    if (typeof window.openEpisodeList === 'function') {
         window.openEpisodeList(id, name, index);
     } else {
-        // 모듈 로딩 지연 대응
+        // 2. 아직 로딩 전이면 0.5초만 대기 후 재시도
+        console.log("목록 모듈 대기 중...");
         setTimeout(function() {
-            if(window.openEpisodeList) window.openEpisodeList(id, name, index);
-            else alert("뷰어 모듈이 로딩 중입니다. 다시 시도해주세요.");
-        }, 300);
+            if(typeof window.openEpisodeList === 'function') {
+                window.openEpisodeList(id, name, index);
+            } else {
+                alert("뷰어 로딩이 지연되고 있습니다. 페이지를 새로고침(F5) 해주세요.");
+            }
+        }, 500);
     }
 };
 
-// [3. 그리드 렌더링 및 사이트 링크 복구]
+// [3. 그리드 렌더링 - 버튼 3개 복구]
 window.renderGrid = function(seriesList) {
     window.allSeries = seriesList;
     var grid = document.getElementById('grid');
@@ -56,7 +62,7 @@ window.renderGrid = function(seriesList) {
         var thumb = series.thumbnailId ? "https://googleusercontent.com/profile/picture/0" + series.thumbnailId + "=s400" : NO_IMAGE_SVG;
         var safeTitle = series.name.replace(/'/g, "\\'");
         
-        // 사이트 도메인 계산
+        // 도메인 링크 계산
         var saved = JSON.parse(localStorage.getItem('toki_domains')) || DEFAULT_DOMAINS;
         var domain = (category === "Novel") ? "booktoki" + saved.booktoki + ".com/novel/" : 
                      (category === "Manga") ? "manatoki" + saved.manatoki + ".net/comic/" : 
@@ -85,8 +91,8 @@ window.renderGrid = function(seriesList) {
     window.filterData();
 };
 
-// [4. 필수 기능 전역 등록]
-window.switchTab = function(tab) { window.currentTab = tab; window.filterData(); };
+// [4. 필수 기능 전역 공개]
+window.switchTab = function(t) { window.currentTab = t; window.filterData(); };
 window.filterData = function() {
     var q = (document.getElementById('search') ? document.getElementById('search').value.toLowerCase() : "");
     document.querySelectorAll('.card').forEach(function(card) {
@@ -103,9 +109,11 @@ window.refreshDB = async function(f, s, b) {
     try {
         var response = await API.request('view_get_library', { folderId: API.folderId, refresh: b });
         window.renderGrid(Array.isArray(response) ? response : []);
-        // 여기서 TypeError 발생 방지
-        if (window.renderRecentList) await window.renderRecentList();
-    } finally { if(loader) loader.style.display = 'none'; }
+        // 정의 확인 후 실행하여 TypeError 방지
+        if (typeof window.renderRecentList === 'function') await window.renderRecentList();
+    } finally {
+        if(loader) loader.style.display = 'none';
+    }
 };
 
 window.saveCurrentBookmark = async function() {
@@ -120,7 +128,7 @@ window.saveCurrentBookmark = async function() {
     } catch (e) { console.error(e); }
 };
 
-window.handleViewerClick = function(e) { /* 생략된 기존 클릭 로직 */ };
+window.handleViewerClick = function(e) { /* 기존 클릭 로직 */ };
 
-// 초기 실행
+// 초기 로딩
 window.addEventListener('DOMContentLoaded', function() { if (window.API && API.isConfigured()) window.refreshDB(); });
