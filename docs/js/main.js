@@ -435,102 +435,129 @@ function toggleSettings() {
     el.style.display = el.style.display === 'block' ? 'none' : 'block';
 }
 
-// [수정] main.js 초기화 블록
-window.addEventListener('DOMContentLoaded', () => {
-
-  const viewerContent = document.getElementById('viewerContent');
-  if (viewerContent && typeof handleInteraction === 'function') {
-    viewerContent.addEventListener('click', handleInteraction, true);
-    viewerContent.addEventListener('touchstart', handleInteraction, { passive: false });
-  }
-
-  // ✅ 텍스트(스크롤) 모드: 중앙 탭하면 컨트롤(검정 바) 토글
-  const scrollEl = document.getElementById('viewerScrollContainer');
-  if (scrollEl) {
-    const LEFT = 35;
-    const RIGHT = 65;
-
-    // 컨트롤 엘리먼트 찾기 (id / class 둘 다 대응)
-  const getControlsEl = () =>
-    document.getElementById('viewerControls') ||
-    document.querySelector('.viewer-controls');
-
-  // "탭" 판정용(스크롤/드래그와 구분)
-  let startX = 0;
-  let startY = 0;
-  let startT = 0;
-
-  // 터치 시작: 좌표만 기록 (여기서는 절대 preventDefault/stopPropagation 하지 않음)
-  scrollEl.addEventListener(
-    'touchstart',
-    (e) => {
-      const t = e.touches && e.touches[0];
-      if (!t) return;
-      startX = t.clientX;
-      startY = t.clientY;
-      startT = Date.now();
-    },
-    { passive: true, capture: true }
-  );
-
-  // 터치 종료: "거의 안 움직였으면" 탭으로 보고 중앙 탭만 토글
-  scrollEl.addEventListener(
-    'touchend',
-    (e) => {
-      const t = e.changedTouches && e.changedTouches[0];
-      if (!t) return;
-
-      const dx = Math.abs(t.clientX - startX);
-      const dy = Math.abs(t.clientY - startY);
-      const dt = Date.now() - startT;
-
-      // 드래그/스크롤이면 무시 (값은 필요시 조절)
-      const isTap = dx < 10 && dy < 10 && dt < 500;
-      if (!isTap) return;
-
-      const xPercent = (t.clientX / window.innerWidth) * 100;
-
-      // 중앙만 토글, 좌우는 토글 금지
-      if (xPercent >= LEFT && xPercent <= RIGHT) {
-        const controls = getControlsEl();
-        if (controls) controls.classList.toggle('show');
-        e.preventDefault?.();
-        e.stopPropagation?.();
-      }
-    },
-    { passive: false, capture: true }
-  );
-
-  // 데스크톱 클릭도 동일 규칙
-  scrollEl.addEventListener(
-    'click',
-    (e) => {
-      // 버튼/인풋 클릭은 무시
-      const t = e.target;
-      if (t && (t.tagName === 'BUTTON' || t.tagName === 'INPUT' || t.closest('button') || t.closest('input'))) return;
-
-      const xPercent = (e.clientX / window.innerWidth) * 100;
-      if (xPercent >= LEFT && xPercent <= RIGHT) {
-        const controls = getControlsEl();
-        if (controls) controls.classList.toggle('show');
-        e.preventDefault?.();
-        e.stopPropagation?.();
-      }
-    },
-    true
-  );
+// ============================================================
+// [Fix] Viewer interaction bindings (works even if viewer DOM is created later)
+// ============================================================
+function getViewerControlsEl() {
+  return document.getElementById('viewerControls') || document.querySelector('.viewer-controls');
 }
 
-      // 2. 기존 로직 (handshake 등)
-  window.addEventListener("message", handleMessage, false);
+function bindViewerContentDelegates() {
+  const viewerContent =
+    document.getElementById('viewerContent') || document.querySelector('.viewer-content');
+  if (!viewerContent || viewerContent.__tokiBound) return;
+
+  viewerContent.__tokiBound = true;
+
+  const forward = (e) => {
+    if (typeof window.handleInteraction === 'function') {
+      window.handleInteraction(e);
+    }
+  };
+
+  viewerContent.addEventListener('click', forward, true);
+  viewerContent.addEventListener('touchstart', (e) => forward(e), { passive: false, capture: true });
+}
+
+function bindTextCenterTap(container) {
+  if (!container || container.__tokiTextBound) return;
+  container.__tokiTextBound = true;
+
+  const LEFT = 35;
+  const RIGHT = 65;
+
+  const toggleBars = (e) => {
+    const t = e.target;
+
+    // If the user actually clicked on UI controls, ignore.
+    if (
+      t &&
+      (t.closest('.viewer-header') ||
+        t.closest('.viewer-footer') ||
+        t.closest('button') ||
+        t.closest('input') ||
+        t.closest('a'))
+    ) {
+      return;
+    }
+
+    const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    const xPercent = (clientX / window.innerWidth) * 100;
+
+    // Only center tap toggles the bars.
+    if (xPercent >= LEFT && xPercent <= RIGHT) {
+      const controls = getViewerControlsEl();
+      if (controls) controls.classList.toggle('show');
+
+      e.preventDefault?.();
+      e.stopPropagation?.();
+    }
+  };
+
+  container.addEventListener('click', toggleBars, true);
+  container.addEventListener('touchstart', toggleBars, { passive: false, capture: true });
+}
+
+function watchViewerDomAndBind() {
+  const tryBind = () => {
+    bindViewerContentDelegates();
+
+    // If the text-engine uses `.text-*` touch zones, alias them to the legacy
+    // class names so existing navigation logic keeps working.
+    aliasTextTouchZones();
+
+    // Text/EPUB containers can vary by engine.
+    // 1) Legacy/Foliate container (#viewerScrollContainer.epub-mode)
+    const scrollEl = document.getElementById('viewerScrollContainer');
+    if (scrollEl && (scrollEl.classList.contains('epub-mode') || scrollEl.querySelector('.epub-content'))) {
+      bindTextCenterTap(scrollEl);
+      return;
+    }
+
+    // 2) New text viewer engine container (.book-container)
+    const bookEl = document.querySelector('.book-container');
+    if (bookEl && getComputedStyle(bookEl).display !== 'none') {
+      bindTextCenterTap(bookEl);
+      return;
+    }
+
+    // 3) Fallback: bind to viewerContent, but only toggle on center taps.
+    const viewerContent = document.getElementById('viewerContent');
+    if (viewerContent) bindTextCenterTap(viewerContent);
+  };
+
+  tryBind();
+
+  // Viewer DOM often gets created after initial load (when opening an episode),
+  // so we observe DOM mutations and bind once the nodes appear.
+  const obs = new MutationObserver(() => tryBind());
+  obs.observe(document.body, { childList: true, subtree: true });
+}
+
+function aliasTextTouchZones() {
+  const zones = document.querySelectorAll('.text-side-tap, .text-left-tap, .text-right-tap');
+  zones.forEach((el) => {
+    // Keep existing class, add legacy aliases
+    if (el.classList.contains('text-side-tap')) el.classList.add('side-tap');
+    if (el.classList.contains('text-left-tap')) el.classList.add('left-tap');
+    if (el.classList.contains('text-right-tap')) el.classList.add('right-tap');
+  });
+}
+
+// [수정] main.js 초기화 블록
+window.addEventListener('DOMContentLoaded', () => {
+  // Bind viewer interactions (delegated + mutation-safe)
+  watchViewerDomAndBind();
+
+  // Handshake
+  window.addEventListener('message', handleMessage, false);
 
   const verEl = document.getElementById('viewerVersionDisplay');
   if (verEl) verEl.innerText = `Viewer Version: ${VIEWER_VERSION}`;
 
-  // 도메인/환경 설정 로드
-  loadDomains();
-
+  // Existing boot logic
   if (API.isConfigured()) {
+    loadDomains();
     refreshDB(null, true);
   } else {
     setTimeout(() => {
@@ -544,8 +571,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 1000);
   }
 });
-
-
 // 🚀 Expose Globals for HTML onclick & Modules
 window.refreshDB = refreshDB;
 window.toggleSettings = toggleSettings;
@@ -581,5 +606,3 @@ async function loadHistory() {
         });
     } catch (e) { console.log("기록 로드 실패"); }
 }
-
-                        
