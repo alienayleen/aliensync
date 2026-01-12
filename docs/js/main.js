@@ -531,3 +531,18 @@ async function saveProgress(seriesId, epId, page) {
         localStorage.setItem(`last_${seriesId}`, JSON.stringify({epId, page}));
     }
 }
+API.request('view_save_bookmark', {
+    folderId: MY_FOLDER_ID,
+    seriesId: currentSeriesId,
+    name: currentSeriesName,
+    epId: currentEpisodeId,
+    page: currentPageNum
+});
+
+async function loadHistory() {
+    const response = await API.request('view_get_bookmarks', { folderId: MY_FOLDER_ID });
+    if (response) {
+        console.log("최근 읽은 목록:", response);
+        // 여기서 최근 본 작품 UI를 그리시면 됩니다.
+    }
+}
