@@ -5,6 +5,7 @@ import { updateNavHandlers, updateButtonStates, closeViewer, loadViewerSettings 
 import { renderEpisodeList } from './episode.js';
 import { showToast, getProgress, formatSize } from './utils.js';
 
+// 목록 창 열기
 export async function openEpisodeList(seriesId, title, seriesIndex) {
     document.getElementById('episodeModal').style.display = 'flex';
     document.querySelector('#episodeModal .modal-title').innerText = `📄 ${title}`;
@@ -20,10 +21,12 @@ export async function openEpisodeList(seriesId, title, seriesIndex) {
     }
 }
 
+// 목록 창 닫기
 export function closeEpisodeModal() {
     document.getElementById('episodeModal').style.display = 'none';
 }
 
+// 뷰어 실행
 export async function loadViewer(index, isContinuous = false) {
     const book = currentBookList[index];
     if (!book) return;
@@ -71,7 +74,6 @@ export async function loadViewer(index, isContinuous = false) {
         let blobUrls = [];
         
         if (nextBookPreload && nextBookPreload.index === index && Array.isArray(nextBookPreload.images)) {
-            console.log("Using preloaded data!");
             blobUrls = nextBookPreload.images;
             setNextBookPreload(null);
         } else {
@@ -91,8 +93,6 @@ export async function loadViewer(index, isContinuous = false) {
             updateButtonStates(); 
             renderLegacyMode(result.content);
             return;
-        } else if (result.type === 'epub') {
-             throw new Error("지원되지 않는 EPUB 형식입니다.");
         } else {
             vState.epubMode = false;
             updateButtonStates(); 
@@ -100,36 +100,17 @@ export async function loadViewer(index, isContinuous = false) {
         }
 
         vState.images = blobUrls.map(url => ({ src: url, width: 0, height: 0, loaded: false }));
-        
         await loadAllImageDimensions(vState.images);
-
         recalcSpreads(false); 
 
         const lastPage = getProgress(book.seriesId, book.id);
-        if (!isContinuous && lastPage > 0 && lastPage < vState.images.length) {
-            const spreadIdx = vState.spreads.findIndex(spread => spread.includes(lastPage));
-            vState.currentSpreadIndex = spreadIdx >= 0 ? spreadIdx : 0;
-            showToast(`📑 이어보기: ${lastPage + 1}페이지`);
-        } else {
-            vState.currentSpreadIndex = 0;
-        }
-
         if (vState.scrollMode) {
             renderScrollMode();
-            const lastPage = getProgress(book.seriesId, book.id);
              if (!isContinuous && lastPage > 0) {
-                 // scrollToPage is in renderer, but we need to import it.
-                 // Actually scrollToPage is exported from renderer.js
-                 // We need to import it here? 
-                 // No, wait. loadViewer calls renderScrollMode which sets up scroll.
-                 // But scrollToPage is needed here.
-                 // I will import it.
                  const { scrollToPage } = await import('./renderer.js');
                  scrollToPage(lastPage);
              }
         } else {
-             recalcSpreads(false);
-             const lastPage = getProgress(book.seriesId, book.id);
              if (!isContinuous && lastPage > 0 && lastPage < vState.images.length) {
                  const spreadIdx = vState.spreads.findIndex(spread => spread.includes(lastPage));
                  vState.currentSpreadIndex = spreadIdx >= 0 ? spreadIdx : 0;
@@ -139,7 +120,6 @@ export async function loadViewer(index, isContinuous = false) {
              }
              renderCurrentSpread();
         }
-
     } catch (e) {
         console.error(e);
         container.innerHTML = `<div style="color:red; text-align:center;">오류 발생: ${e.message}<br><button onclick="closeViewer()" style="margin-top:20px; padding:10px;">닫기</button></div>`;
@@ -148,6 +128,7 @@ export async function loadViewer(index, isContinuous = false) {
     }
 }
 
+// 다음 화 트리거 체크
 export function checkNextEpisodeTrigger() {
     if (!window.isLoadingNext) {
         const nextIndex = currentBookIndex + 1;
@@ -160,36 +141,31 @@ export function checkNextEpisodeTrigger() {
                     .catch(() => window.isLoadingNext = false);
             }, 500); 
         } else {
-            if(!window.isEndToastShown) {
-                showToast("🏁 마지막 회차입니다.");
-                window.isEndToastShown = true;
-                setTimeout(()=> window.isEndToastShown = false, 3000);
-            }
+            showToast("🏁 마지막 회차입니다.");
         }
     }
 }
 
+// 다음 화 미리 불러오기
 export function preloadNextEpisode() {
     if (!vState.preload) return; 
-    
     const nextIndex = currentBookIndex + 1;
-    if (nextIndex >= currentBookList.length) return;
-    if (nextBookPreload && nextBookPreload.index === nextIndex) return;
-    if (window.isPreloading) return;
+    if (nextIndex >= currentBookList.length || window.isPreloading) return;
 
     window.isPreloading = true;
     fetchAndUnzip(currentBookList[nextIndex].id, currentBookList[nextIndex].size || 0, null)
         .then(blobUrls => {
             setNextBookPreload({ index: nextIndex, images: blobUrls });
-            showToast("📦 다음 화 준비 완료!", 3000);
             window.isPreloading = false;
         })
         .catch(() => window.isPreloading = false);
 }
 
+// 뷰어 안에서 목록 열기
 export function openEpisodeListFromViewer() {
     const book = currentBookList[currentBookIndex];
     if(book) {
-        openEpisodeList(book.seriesId, document.querySelector('.modal-title').innerText.replace('📄 ','').split('(')[0].trim());
+        const title = document.getElementById('viewerTitle') ? document.getElementById('viewerTitle').innerText : "목록";
+        openEpisodeList(book.seriesId, title);
     }
 }
