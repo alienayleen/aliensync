@@ -1,8 +1,8 @@
 /**
- * Viewer Modules Aggregator
- * Exposes all necessary functions to global window object
+ * 🚀 Viewer Modules Aggregator (Final Fixed Version)
  */
 
+// 1. 각 모듈에서 함수 가져오기
 import { vState } from './state.js';
 import { 
     openEpisodeList, 
@@ -31,13 +31,17 @@ import {
     initKeyControls
 } from './controls.js';
 
-// Expose to Window
-window.openEpisodeList = openEpisodeList;
+/**
+ * 2. 전역(window) 객체에 강제 할당 (Bridge)
+ * 이 작업이 있어야 main.js와 HTML 버튼에서 함수를 찾을 수 있습니다.
+ */
+window.openEpisodeList = openEpisodeList; 
 window.loadViewer = loadViewer;
 window.closeEpisodeModal = closeEpisodeModal;
 window.openEpisodeListFromViewer = openEpisodeListFromViewer;
 
 window.navigateViewer = navigateViewer;
+window.navigateScrollMode = navigateScrollMode;
 
 window.toggleViewMode = toggleViewMode;
 window.toggleScrollMode = toggleScrollMode;
@@ -51,13 +55,7 @@ window.handleViewerClick = handleViewerClick;
 window.onSliderInput = onSliderInput;
 window.onSliderChange = onSliderChange;
 
-// Initialize Key Controls
-initKeyControls(); // Start listening
-console.log("🚀 Viewer Modules Loaded & Initialized");
+// 3. 뷰어 초기화 실행
+initKeyControls(); 
 
-
-// 이 줄이 있어야 main.js나 HTML 버튼에서 목록열기 기능을 사용할 수 있습니다.
-window.openEpisodeList = openEpisodeList; 
-window.navigateViewer = navigateViewer;
-window.closeViewer = closeViewer;
-window.toggleScrollMode = toggleScrollMode; // 필요한 경우 추가
+console.log("🚀 Viewer Modules Globally Exposed & Initialized");
