@@ -965,3 +965,54 @@ foliate-view {
 .epub-only {
     display: inline-block !important; 
 }
+
+
+/* [최종 스크롤 및 레이아웃 수정] */
+
+/* 1. 뷰어 배경 및 전체 레이어 */
+.viewer-overlay {
+    background: #000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* 2. 스크롤 컨테이너: 텍스트가 잘 보이고 스크롤이 무조건 되게 함 */
+#viewerScrollContainer {
+    display: block !important; /* flex 해제 */
+    position: relative !important;
+    width: 100% !important;
+    height: 100vh !important;
+    overflow-y: scroll !important; /* 스크롤 강제 활성화 */
+    overflow-x: hidden !important;
+    padding: 80px 20px 150px 20px !important;
+    box-sizing: border-box !important;
+    background: #1a1a1a !important;
+    z-index: 10 !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 3. 로딩 중... 반쪽 화면 현상 해결 */
+.viewer-image-container, .viewer-content {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+}
+
+/* 4. 메뉴바 노출 설정 (JS의 .show 클래스와 연동) */
+.viewer-controls {
+    pointer-events: none !important;
+    z-index: 1000 !important;
+}
+.viewer-controls.show .viewer-header,
+.viewer-controls.show .viewer-footer {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+}
+
+/* 5. 양옆 클릭 영역(nav-zone) 설정 */
+.nav-zone {
+    width: 20% !important; /* 20% 영역으로 축소하여 중앙 메뉴 영역 확보 */
+    z-index: 100 !important;
+}
