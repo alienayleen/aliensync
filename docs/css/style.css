@@ -416,17 +416,20 @@ h1 {
     position: absolute;
     inset: 0;
     z-index: 5000;
-    pointer-events: none; /* [핵심] 중앙 클릭이 본문(viewerContent)으로 전달되게 함 */
+/* [핵심] 이 설정이 없으면 투명한 벽이 클릭을 막아 중앙 터치가 안 먹힙니다. */
+    pointer-events: none !important; 
 }
 
 /* 2. 대신 검정 바 내부의 버튼들은 클릭이 되어야 합니다. */
-.viewer-header, .viewer-footer {
-    pointer-events: auto; /* 버튼 클릭은 다시 활성화 */
+pointer-events: auto !important; 
+    background: rgba(10, 10, 10, 0.9);
+    transition: transform 0.3s;
 }
 
 /* 3. 사이드 탭이 본문 위에서 확실히 클릭을 가로채게 합니다. */
 .side-tap {
-    z-index: 2000 !important; /* 본문 내용보다 위에 배치 */
+    z-index: 2000 !important; /* 본문 내용보다는 높지만, 검정 바보다는 낮게 */
+    pointer-events: auto;
 }
 /* Header & Footer inside Controls Layer */
 /* Header & Footer inside Controls Layer */
