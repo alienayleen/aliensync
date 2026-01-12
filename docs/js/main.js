@@ -195,7 +195,9 @@ function renderGrid(seriesList) {
         console.warn("[renderGrid] Expected array but got:", seriesList);
         allSeries = [];
     }
+
     const grid = document.getElementById('grid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     if (!allSeries || allSeries.length === 0) {
@@ -204,37 +206,54 @@ function renderGrid(seriesList) {
     }
 
     allSeries.forEach((series, index) => {
-        allSeries = Array.isArray(seriesList) ? seriesList : [];
-    const grid = document.getElementById('grid');
-    if (!grid) return;
-    grid.innerHTML = '';
+        const thumb = series.thumbnailId
+            ? `https://googleusercontent.com/profile/picture/0${series.thumbnailId}=s400`
+            : NO_IMAGE_SVG;
 
-    allSeries.forEach((series, index) => {
-        const thumb = series.thumbnailId ? `https://googleusercontent.com/profile/picture/0${series.thumbnailId}=s400` : NO_IMAGE_SVG;
         const meta = series.metadata || {};
-        const category = series.category || meta.category || 'Webtoon'; 
-        
+        const category = series.category || meta.category || 'Webtoon';
+
+        // 작은따옴표 이스케이프 (onclick 문자열 안전)
+        const safeName = (series.name || '').replace(/'/g, "\\'");
+
         const card = document.createElement('div');
         card.className = 'card';
+
+        // 원래 의도: (1) 드라이브 (2) 목록열기(최근기록 저장 포함) (3) 사이트(있을 때)
         card.innerHTML = `
             <div class="thumb-wrapper">
                 <img src="${thumb}" class="thumb" onerror="this.src='${NO_IMAGE_SVG}'">
                 <div class="overlay">
-                    <button onclick="saveReadHistory('${series.id}', '${series.name.replace(/'/g, "\\'")}'); openEpisodeList('${series.id}', '${series.name}', ${index})" class="btn" style="background:#444; color:white;">📄 목록</button>
+                    <a href="https://drive.google.com/drive/u/0/folders/${series.id}" target="_blank" class="btn btn-drive">📂 드라이브</a>
+
+                    <button
+                        onclick="try{ saveReadHistory('${series.id}', '${safeName}'); }catch(e){}; openEpisodeList('${series.id}', '${safeName}', ${index});"
+                        class="btn"
+                        style="background:#444; color:white;"
+                    >📄 목록</button>
+
+                    ${series.sourceId ? `<a href="${getDynamicLink(series)}" target="_blank" class="btn btn-site">🌐 사이트</a>` : ''}
                 </div>
             </div>
+
             <div class="info">
-                <div class="title" style="font-weight:bold; font-size:15px; margin-bottom:2px;">${series.name}</div>
-                <div class="author" style="font-size:12px; color:#aaa; margin-bottom:8px;">${meta.authors?.join(', ') || '작가 미상'}</div>
+                <div class="title" style="font-weight:bold; font-size:15px; margin-bottom:2px;">${series.name || ''}</div>
+                <div class="author" style="font-size:12px; color:#aaa; margin-bottom:8px;">
+                    ${(meta.authors && Array.isArray(meta.authors) ? meta.authors.join(', ') : '작가 미상')}
+                </div>
                 <div class="meta" style="display:flex; justify-content:space-between; border-top:1px solid #333; padding-top:8px;">
-                    <span style="font-size:11px; font-weight:bold; color:var(--accent);">${category.toUpperCase()}</span>
-                    <span style="font-size:11px; color:#eee;">${meta.status || 'ONGOING'} ${series.booksCount || 0}권</span>
+                    <span style="font-size:11px; font-weight:bold; color:var(--accent);">${String(category).toUpperCase()}</span>
+                    <span style="font-size:11px; color:#eee;">
+                        ${meta.status || 'ONGOING'} ${series.booksCount || 0}권
+                    </span>
                 </div>
             </div>
         `;
+
         grid.appendChild(card);
     });
 }
+
 
 // ============================================================
 // 4. Utility / UI Handlers
