@@ -32,18 +32,13 @@ const handleInteraction = (e) => {
     if (['BUTTON', 'INPUT', 'A', 'LABEL'].includes(e.target.tagName)) return;
     const x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
     const xPercent = (x / window.innerWidth) * 100;
+    const controls = document.getElementById('viewerControls');
 
     if (xPercent < 35 || xPercent > 65) {
         // 좌우 35% 영역: 페이지 이동만 하고 검정 바 호출은 차단
-        e.stopPropagation(); 
-        if (xPercent < 35) navigateViewer(-1);
-        else navigateViewer(1);
-    } else {
-    // 중앙 30% 영역: 함수 호출 대신 직접 'show' 클래스를 토글합니다.
-    const controls = document.getElementById('viewerControls');
-    if (controls) {
-        controls.classList.toggle('show'); // 검정 바가 나오고 들어가는 핵심 로직
-    }
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
 }
 };
 
