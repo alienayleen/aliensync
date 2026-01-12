@@ -668,6 +668,10 @@ input[type=range]::-webkit-slider-thumb {
   pointer-events: none;
 }
 
+/* [추가] 검정 바(viewer-controls)가 보일 때(show 클래스)만 페이지 번호 표시 */
+.viewer-controls.show ~ .viewer-content .page-counter {
+    opacity: 1;
+}
 
 /* Config & Toast */
 .config-group {
