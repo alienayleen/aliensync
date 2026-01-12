@@ -1,8 +1,7 @@
 /**
- * 🚀 Viewer Modules Aggregator (Final Fixed Version)
+ * 🚀 Viewer Modules Aggregator (Final Disaster Recovery)
  */
 
-// 1. 각 모듈에서 함수 가져오기
 import { vState } from './state.js';
 import { 
     openEpisodeList, 
@@ -31,31 +30,38 @@ import {
     initKeyControls
 } from './controls.js';
 
-/**
- * 2. 전역(window) 객체에 강제 할당 (Bridge)
- * 이 작업이 있어야 main.js와 HTML 버튼에서 함수를 찾을 수 있습니다.
- */
-window.openEpisodeList = openEpisodeList; 
+// ---------------------------------------------------------
+// 🌐 [중요] HTML 버튼과 연결되는 전역 함수 강제 등록
+// ---------------------------------------------------------
+
+// 1. 설정 버튼 에러 해결 (toggleSettings가 toggleControls와 같은 역할이라면)
+window.toggleSettings = function() {
+    const panel = document.getElementById('domainPanel');
+    if (panel) {
+        panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+    }
+};
+
+// 2. 목록열기 및 필수 뷰어 함수 연결
+window.openEpisodeList = openEpisodeList;
 window.loadViewer = loadViewer;
 window.closeEpisodeModal = closeEpisodeModal;
 window.openEpisodeListFromViewer = openEpisodeListFromViewer;
-
 window.navigateViewer = navigateViewer;
-window.navigateScrollMode = navigateScrollMode;
+window.closeViewer = closeViewer;
+window.handleViewerClick = handleViewerClick;
+window.onSliderInput = onSliderInput;
+window.onSliderChange = onSliderChange;
 
+// 3. 뷰어 설정 관련
 window.toggleViewMode = toggleViewMode;
 window.toggleScrollMode = toggleScrollMode;
 window.toggleCoverMode = toggleCoverMode;
 window.toggleRtlMode = toggleRtlMode;
 window.togglePreloadMode = togglePreloadMode;
-window.changeFontSize = changeFontSize;
-window.closeViewer = closeViewer;
-window.toggleControls = toggleControls;
-window.handleViewerClick = handleViewerClick;
-window.onSliderInput = onSliderInput;
-window.onSliderChange = onSliderChange;
 
-// 3. 뷰어 초기화 실행
+// ---------------------------------------------------------
+// ⚙️ 초기화 실행
+// ---------------------------------------------------------
 initKeyControls(); 
-
 console.log("🚀 Viewer Modules Globally Exposed & Initialized");
