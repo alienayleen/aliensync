@@ -1,5 +1,5 @@
 /**
- * 🚀 TokiSync Frontend - Main Controller
+ * 🚀 AlienSync Frontend - Main Controller
  * - Handles Initialization
  * - Config Handshake (Zero-Config)
  * - Grid Rendering
@@ -546,32 +546,108 @@ function aliasTextTouchZones() {
 
 // [수정] main.js 초기화 블록
 window.addEventListener('DOMContentLoaded', () => {
-  // Bind viewer interactions (delegated + mutation-safe)
-  watchViewerDomAndBind();
 
-  // Handshake
+  // ==========================================================
+  // Viewer Interaction (robust, works even if viewer functions
+  // load AFTER main.js)
+  // - Center tap: toggle black bars (#viewerControls.show)
+  // - Left/Right tap: page turn (delegates to viewer if present,
+  //   otherwise clicks nav zones)
+  // ==========================================================
+  const viewerContent = document.getElementById('viewerContent');
+
+  const LEFT = 35;
+  const RIGHT = 65;
+
+  function getXPercent(e) {
+    const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    if (!clientX || !window.innerWidth) return 50;
+    return (clientX / window.innerWidth) * 100;
+  }
+
+  function isUiElement(target) {
+    if (!target) return false;
+    // 클릭이 UI에서 발생하면 본문 탭 처리 제외
+    return !!(
+      target.closest('#viewerControls') ||
+      target.closest('.viewer-header') ||
+      target.closest('.viewer-footer') ||
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('a')
+    );
+  }
+
+  function clickNavZone(which) {
+    // 이미지뷰어: nav-zone이 있으면 그쪽을 우선 클릭
+    const sel = which === 'prev' ? '.nav-prev, .viewer-nav-prev, [data-nav="prev"]'
+                                 : '.nav-next, .viewer-nav-next, [data-nav="next"]';
+    const el = document.querySelector(sel);
+    if (el) {
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+      return true;
+    }
+    return false;
+  }
+
+  function viewerTapHandler(e) {
+    // 뷰어가 열려있는 상황에서만 개입
+    const overlay = document.getElementById('viewerOverlay');
+    const isOpen = overlay && (overlay.style.display === 'flex' || overlay.style.display === 'block');
+    if (!isOpen) return;
+
+    if (isUiElement(e.target)) return;
+
+    const xPercent = getXPercent(e);
+
+    // 1) Center: toggle bars
+    if (xPercent >= LEFT && xPercent <= RIGHT) {
+      const controls = document.getElementById('viewerControls');
+      if (controls) controls.classList.toggle('show');
+
+      e.preventDefault?.();
+      e.stopPropagation?.();
+      return;
+    }
+
+    // 2) Left/Right: delegate to viewer if available
+    if (typeof window.handleInteraction === 'function') {
+      return window.handleInteraction(e);
+    }
+
+    // 3) Fallback: click nav zones
+    if (xPercent < LEFT) clickNavZone('prev');
+    else clickNavZone('next');
+  }
+
+  if (viewerContent) {
+    viewerContent.addEventListener('click', viewerTapHandler, true);
+    viewerContent.addEventListener('touchstart', viewerTapHandler, { passive: false, capture: true });
+  }
+
+  // ==========================================================
+  // Existing initialization (handshake, config, etc.)
+  // ==========================================================
   window.addEventListener('message', handleMessage, false);
 
   const verEl = document.getElementById('viewerVersionDisplay');
   if (verEl) verEl.innerText = `Viewer Version: ${VIEWER_VERSION}`;
 
-  // Existing boot logic
   if (API.isConfigured()) {
-    loadDomains();
     refreshDB(null, true);
+    loadDomains();
   } else {
     setTimeout(() => {
       if (!API.isConfigured()) {
-        const cm = document.getElementById('configModal');
-        if (cm) cm.style.display = 'flex';
+        const modal = document.getElementById('configModal');
+        if (modal) modal.style.display = 'flex';
       } else {
         refreshDB(null, true);
       }
       loadDomains();
     }, 1000);
   }
-});
-// 🚀 Expose Globals for HTML onclick & Modules
+});// 🚀 Expose Globals for HTML onclick & Modules
 window.refreshDB = refreshDB;
 window.toggleSettings = toggleSettings;
 window.switchTab = switchTab;
