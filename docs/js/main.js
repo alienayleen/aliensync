@@ -438,13 +438,13 @@ function toggleSettings() {
 // [수정] main.js 초기화 블록
 window.addEventListener('DOMContentLoaded', () => {
 
-    const viewerContent = document.getElementById('viewerContent');
+  const viewerContent = document.getElementById('viewerContent');
   if (viewerContent && typeof handleInteraction === 'function') {
     viewerContent.addEventListener('click', handleInteraction, true);
     viewerContent.addEventListener('touchstart', handleInteraction, { passive: false });
   }
 
-    // ✅ 텍스트(스크롤) 모드: 중앙 탭하면 컨트롤(검정 바) 토글
+  // ✅ 텍스트(스크롤) 모드: 중앙 탭하면 컨트롤(검정 바) 토글
   const scrollEl = document.getElementById('viewerScrollContainer');
   if (scrollEl) {
     const LEFT = 35;
@@ -463,21 +463,20 @@ window.addEventListener('DOMContentLoaded', () => {
         const controls = document.getElementById('viewerControls');
         if (controls) controls.classList.toggle('show');
 
-        // 중앙 탭은 페이지 이동/기타 클릭으로 새지 않게 차단
-        e.preventDefault?.();
-        e.stopPropagation?.();
+        // 중앙 탭은 다른 클릭으로 새지 않게
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
       }
-      // 좌우는 아무것도 안 함 (페이지 넘김 로직이 있으면 그쪽이 처리)
     };
 
     scrollEl.addEventListener('click', toggleBars, true);
     scrollEl.addEventListener('touchstart', toggleBars, { passive: false, capture: true });
+  } 
 
+  // 2. 기존 로직 (handshake 등)
+  window.addEventListener("message", handleMessage, false);
 
-    // 2. 기존 로직 (handshake 등)
-    window.addEventListener("message", handleMessage, false);
-    
-    const verEl = document.getElementById('viewerVersionDisplay');
+  const verEl = document.getElementById('viewerVersionDisplay');
   if (verEl) verEl.innerText = `Viewer Version: ${VIEWER_VERSION}`;
 
   if (API.isConfigured()) {
@@ -494,6 +493,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 1000);
   }
 });
+
 
 // 🚀 Expose Globals for HTML onclick & Modules
 window.refreshDB = refreshDB;
