@@ -932,66 +932,36 @@ foliate-view {
 
 
 /* ============================================================
-   🚀 뷰어 개선: 스크롤 및 검정 바 가려짐 해결
+   🚀 뷰어 최종 수정안 (이름을 .show로 통일)
    ============================================================ */
 
-/* 1. 메뉴(검정 바) 컨트롤: 평소엔 클릭 방해 금지 */
+/* 1. 메뉴 컨테이너 기본 설정 */
 .viewer-controls {
-    pointer-events: none !important; /* 메뉴가 투명할 때 클릭이 뒤로 통과됨 */
-    opacity: 1 !important; /* 컨테이너 자체는 유지 */
-    background: none !important;
+    pointer-events: none !important;
 }
 
-/* 2. 실제 메뉴바(상단/하단) 설정 */
-.viewer-header, .viewer-footer {
-    pointer-events: auto !important; /* 버튼은 클릭 가능하게 */
-    transition: all 0.2s ease-in-out !important;
-    visibility: hidden; /* 기본적으로 숨김 */
-    opacity: 0;
-}
-
-/* active 클래스가 붙었을 때만 메뉴바를 보여줌 */
-.viewer-controls.active .viewer-header,
-.viewer-controls.active .viewer-footer {
-    visibility: visible !important;
+/* 2. .show 클래스가 있을 때만 하위 헤더/푸터를 보여줌 */
+.viewer-controls.show .viewer-header,
+.viewer-controls.show .viewer-footer {
     opacity: 1 !important;
+    visibility: visible !important;
     transform: translateY(0) !important;
+    pointer-events: auto !important;
 }
 
-/* 3. 스크롤 뷰어 영역 - 강제 스크롤 및 여백 */
-.viewer-scroll-container {
-    display: block !important; 
-    width: 100% !important;
-    height: 100vh !important; /* 화면 높이 꽉 채움 */
-    overflow-y: auto !important; /* 세로 스크롤 강제 활성화 */
-    overflow-x: hidden !important;
-    
-    /* 메뉴바에 글자가 가려지지 않도록 상하 여백 추가 */
-    padding-top: 70px !important;
-    padding-bottom: 120px !important; 
-    
-    box-sizing: border-box !important;
-    background: #1a1a1a !important; /* 배경 어둡게 */
-    z-index: 5 !important;
-}
-
-/* 4. 텍스트 가독성 설정 (소설/텍스트 모드) */
-.viewer-scroll-container {
-    color: #e0e0e0 !important;
-    font-size: 18px; /* 기본 크기 */
-    line-height: 1.8 !important;
-    word-break: break-all !important;
-}
-
-/* 이미지 모드일 때 이미지 정렬 */
-.viewer-scroll-container img {
-    max-width: 100% !important;
-    height: auto !important;
+/* 3. 스크롤 컨테이너 강제 활성화 */
+#viewerScrollContainer {
     display: block !important;
-    margin: 0 auto 10px !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 80px 20px 150px 20px !important; /* 상하 여백 충분히 */
+    box-sizing: border-box !important;
+    background: #1a1a1a !important;
+    -webkit-overflow-scrolling: touch; /* 모바일 부드러운 스크롤 */
 }
 
-/* 5. 네비게이션 구역(양옆 클릭존) 레이어 순서 조정 */
-.nav-zone {
-    z-index: 10 !important; /* 텍스트보다 위에 있어서 클릭을 가로챔 */
+/* 4. 글자 크기 버튼이 혹시 숨겨져 있다면 강제로 보여줌 */
+.epub-only {
+    display: inline-block !important; 
 }
