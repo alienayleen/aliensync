@@ -13,51 +13,29 @@
     
     <div class="app-container">
         <header>
-            <div class="header-top">
-                <h1 onclick="location.reload()">TokiSync ⚡️</h1>
-                <div class="controls">
-                    <input type="text" id="search" class="search-box" placeholder="작품 검색..." onkeyup="filterData()">
-                    <button class="btn-icon btn-refresh" id="refreshBtn" onclick="refreshDB(null, false, true)" title="새로고침">↻</button>
-                    <button class="btn-icon" onclick="toggleSettings()" title="사이트 설정">⚙️</button>
-                </div>
-            </div>
-            
-               <div id="recentSection" class="recent-section">
-    <div style="font-size: 14px; font-weight: bold; color: var(--accent); margin-bottom: 5px;">📍 최근 읽은 작품</div>
-    <div id="recentList" class="recent-list"><div style="color:#666; font-size:12px;">불러오는 중...</div></div>
-</div>
-    
-    <div id="recentSection" style="margin-bottom:20px; padding:15px; background:#252525; border-radius:10px; border:1px solid var(--accent);">
-    <div style="font-size:14px; font-weight:bold; color:var(--accent); margin-bottom:10px;">📍 최근 읽은 작품</div>
-    <div id="recentList" style="display:flex; gap:10px; overflow-x:auto;">
+    <div class="header-top">
+        <h1 onclick="location.reload()">TokiSync ⚡️</h1>
+        <div class="controls">
+            <input type="text" id="search" class="search-box" placeholder="작품 검색..." onkeyup="filterData()">
+            <button class="btn-icon btn-refresh" id="refreshBtn" onclick="refreshDB(null, false, true)" title="새로고침">↻</button>
+            <button class="btn-icon" onclick="toggleSettings()" title="사이트 설정">⚙️</button>
         </div>
-
-            <div class="tab-bar">
-                <button class="tab-btn active" onclick="switchTab('all')">전체</button>
-                <button class="tab-btn" onclick="switchTab('Webtoon')">웹툰</button>
-                <button class="tab-btn" onclick="switchTab('Manga')">만화</button>
-                <button class="tab-btn" onclick="switchTab('Novel')">소설</button>
-            </div>
-            
-            <div id="domainPanel" style="display:none; background:#252525; padding:15px; border-radius:10px; margin-top:10px; color:#ddd;">
-                <h3 style="margin:0 0 10px 0; font-size:14px; border-bottom:1px solid #444; padding-bottom:5px;">🔗 바로가기 도메인</h3>
-                <div class="config-grid" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px;">
-                    <div><label style="font-size:11px; color:#aaa;">마나토끼</label><input type="text" id="url_manatoki" class="config-input" style="text-align:center;"></div>
-                    <div><label style="font-size:11px; color:#aaa;">뉴토끼</label><input type="text" id="url_newtoki" class="config-input" style="text-align:center;"></div>
-                    <div><label style="font-size:11px; color:#aaa;">북토끼</label><input type="text" id="url_booktoki" class="config-input" style="text-align:center;"></div>
-                </div>
-                <h3 style="margin:0 0 10px 0; font-size:14px; border-bottom:1px solid #444; padding-bottom:5px;">☁️ 서버 연결 설정</h3>
-                <div class="config-group" style="margin-bottom:15px;">
-                    <label style="font-size:11px; color:#aaa; display:block;">Folder ID</label>
-                    <input type="text" id="setting_folderId" class="config-input">
-                </div>
-                <div class="config-group" style="margin-bottom:15px;">
-                    <label style="font-size:11px; color:#aaa; display:block;">GAS Deployment ID</label>
-                    <input type="text" id="setting_deployId" class="config-input">
-                </div>
-                <button class="btn btn-save" onclick="saveActiveSettings()" style="width:100%;">전체 저장</button>
-            </div>
-        </header>
+    </div>
+    
+    <div id="recentSection" class="recent-section">
+        <div style="font-size: 14px; font-weight: bold; color: var(--accent); margin-bottom: 8px;">📍 최근 읽은 작품</div>
+        <div id="recentList" class="recent-list">
+            <div style="color:#666; font-size:12px;">불러오는 중...</div>
+        </div>
+    </div>
+    
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('all')">전체</button>
+        <button class="tab-btn" onclick="switchTab('Webtoon')">웹툰</button>
+        <button class="tab-btn" onclick="switchTab('Manga')">만화</button>
+        <button class="tab-btn" onclick="switchTab('Novel')">소설</button>
+    </div>
+</header>
 
         <div class="grid-container" id="grid"></div>
     </div>
