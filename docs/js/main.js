@@ -457,7 +457,7 @@ function bindViewerContentDelegates() {
     const vsc = document.getElementById('viewerScrollContainer');
     if (vsc && vsc.classList) {
       if (vsc.classList.contains('scroll-mode')) return true;
-      if (vsc.classList.contains('epub-mode') && !vsc.classList.contains('paged-mode')) return true;
+      if (vsc.classList.contains('scroll-mode')) return true; // only when explicitly in scroll mode
     }
 
     return false;
@@ -612,6 +612,54 @@ function aliasTextTouchZones() {
     if (el.classList.contains('text-right-tap')) el.classList.add('right-tap');
   });
 }
+
+/**
+ * [Mobile/Paged Fix] If viewer renders 2-page spread containers with one empty side,
+ * collapse the empty side so a single page is centered/full-width on small screens.
+ * This is CSS-agnostic and works for both Webtoon(image) and Text(book) paged modes.
+ */
+function normalizeSinglePageSpread() {
+  try {
+    const spreads = document.querySelectorAll('.viewer-spread');
+    spreads.forEach((sp) => {
+      const halves = Array.from(sp.querySelectorAll(':scope > div.half'));
+      if (halves.length < 2) return;
+
+      const hasImg = halves.map(h => h.querySelector('img.viewer-page, img'));
+      const fullIdx = hasImg.findIndex(Boolean);
+      const emptyIdx = hasImg.findIndex(x => !x);
+
+      // If exactly one side has an image and the other is empty -> collapse
+      if (fullIdx !== -1 && emptyIdx !== -1) {
+        const full = halves[fullIdx];
+        const empty = halves[emptyIdx];
+
+        empty.style.display = 'none';
+        full.style.flex = '0 0 100%';
+        full.style.width = '100%';
+        full.style.maxWidth = '100%';
+
+        // Keep the image centered
+        const img = full.querySelector('img');
+        if (img) {
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '100%';
+        }
+      } else {
+        // Reset if both sides have content
+        halves.forEach(h => {
+          h.style.display = '';
+          h.style.flex = '';
+          h.style.width = '';
+          h.style.maxWidth = '';
+        });
+      }
+    });
+  } catch (e) {
+    console.warn('[normalizeSinglePageSpread] failed', e);
+  }
+}
+
 
 // [수정] main.js 초기화 블록
 window.addEventListener('DOMContentLoaded', () => {
