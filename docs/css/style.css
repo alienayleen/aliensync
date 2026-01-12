@@ -1060,3 +1060,31 @@ foliate-view {
   padding-top: 80px;
   padding-bottom: 120px;
 }
+
+
+/* ================================
+   Mobile Centering / Tap Reliability
+   ================================ */
+@media (max-width: 800px) {
+  /* Foliate/EPUB container should fill & center reliably */
+  #viewerScrollContainer.epub-mode {
+    width: 100%;
+    left: 0;
+    right: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Paged view: keep full-width so it doesn't look "shifted" */
+  #viewerScrollContainer.epub-mode .epub-content.paged-view {
+    width: 100%;
+    max-width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
+  }
+
+  /* Text wrapper: avoid odd horizontal alignment */
+  .viewer-page-wrapper.text-mode {
+    align-items: stretch;
+  }
+}
