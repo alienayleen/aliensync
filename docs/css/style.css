@@ -29,15 +29,23 @@
   }
 
   .book-container {
-    width: 100vw;
-    height: 100vh;
-    border-radius: 0;
-    margin: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
   }
 
-  .book-container .inner-content {
-    padding-left: 7vw;
-    padding-right: 7vw;
+  .text-columns {
+    /* 단 너비를 고정값이 아닌 100%로 설정하여 쏠림 방지 */
+    column-width: 100vw !important; 
+    column-gap: 0 !important;
+    width: 100% !important;
+  }
+
+  .inner-content {
+    /* 작은 화면에서 좌우 여백 최적화 */
+    padding: 60px 20px 120px 20px !important; 
+    box-sizing: border-box;
   }
 }
 
