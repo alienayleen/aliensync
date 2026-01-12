@@ -1,6 +1,4 @@
-/**
- * 🚀 TokiSync Frontend - Zero Syntax Error Version
- */
+/* js/main.js 전체를 이 코드로 다시 덮어쓰세요 */
 
 var NO_IMAGE_SVG = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%22%20y%3D%2250%22%20font-family%3D%22Arial%22%20font-size%3D%2212%22%20fill%3D%22%23666%22%20text-anchor%3D%22middle%22%20dy%3D%22.3em%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E";
 var DEFAULT_DOMAINS = { newtoki: '469', manatoki: '469', booktoki: '469' };
@@ -10,10 +8,9 @@ window.currentSeriesId = null;
 window.currentSeriesTitle = "";
 window.currentEpisodeName = "";
 
-// [1. 클릭 핸들러: 양옆 20% 이동 / 가운데 60% 메뉴]
+// [1. 클릭 핸들러: 이동 영역과 메뉴 영역 엄격 분리]
 window.handleViewerClick = function(event) {
     if (event.target.closest('.viewer-controls') || event.target.closest('.btn-icon')) return;
-    
     if(event.stopImmediatePropagation) event.stopImmediatePropagation();
 
     var clickX = event.clientX;
@@ -32,7 +29,7 @@ window.handleViewerClick = function(event) {
     }
 };
 
-// [2. 그리드 렌더링 - 버튼 복구 및 문법 오류 방지]
+// [2. 그리드 렌더링 - 목록 열기 버튼 로직 복구]
 window.renderGrid = function(seriesList) {
     window.allSeries = seriesList;
     var grid = document.getElementById('grid');
@@ -40,7 +37,7 @@ window.renderGrid = function(seriesList) {
     grid.innerHTML = '';
 
     if (!seriesList || seriesList.length === 0) {
-        grid.innerHTML = '<div class="no-data">저장된 작품이 없습니다.</div>';
+        grid.innerHTML = '<div class="no-data">작품이 없습니다.</div>';
         return;
     }
 
@@ -49,7 +46,7 @@ window.renderGrid = function(seriesList) {
         var category = series.category || meta.category || 'Webtoon';
         var thumb = series.thumbnailId ? "https://googleusercontent.com/profile/picture/0" + series.thumbnailId + "=s400" : NO_IMAGE_SVG;
         var safeTitle = series.name.replace(/'/g, "\\'");
-        var dynamicUrl = window.getDynamicLink ? window.getDynamicLink(series) : "#";
+        var dynamicUrl = window.getDynamicLink(series);
 
         var card = document.createElement('div');
         card.className = 'card';
@@ -58,6 +55,7 @@ window.renderGrid = function(seriesList) {
                 '<img src="' + thumb + '" class="thumb" onerror="this.src=\'' + NO_IMAGE_SVG + '\'">' +
                 '<div class="overlay">' +
                     '<a href="https://drive.google.com/drive/u/0/folders/' + series.id + '" target="_blank" class="btn btn-drive">📂 드라이브</a>' +
+                    /* 아래 onclick 부분이 목록 열기 핵심입니다 */
                     '<button onclick="window.handleOpenEpisodes(\'' + series.id + '\', \'' + safeTitle + '\', ' + index + ')" class="btn" style="background:#444; color:white;">📄 목록열기</button>' +
                     (series.sourceId ? '<a href="' + dynamicUrl + '" target="_blank" class="btn btn-site" style="background:#00d084; color:black;">🌐 사이트</a>' : '') +
                 '</div>' +
@@ -76,7 +74,12 @@ window.renderGrid = function(seriesList) {
 window.handleOpenEpisodes = function(id, name, index) {
     window.currentSeriesId = id;
     window.currentSeriesTitle = name;
-    if (window.openEpisodeList) window.openEpisodeList(id, name, index);
+    // index.js에서 정의된 원래의 목록 열기 함수를 호출합니다.
+    if (window.openEpisodeList) {
+        window.openEpisodeList(id, name, index);
+    } else {
+        console.error("openEpisodeList 함수를 찾을 수 없습니다.");
+    }
 };
 
 // [3. 최근 본 작품 & 북마크]
@@ -101,16 +104,16 @@ window.renderRecentList = async function() {
             div.onclick = function() { window.handleOpenEpisodes(item.seriesId, safeItemTitle, 0); };
             div.innerHTML = 
                 '<div class="recent-title">' + item.title + '</div>' +
-                '<div class="recent-ep">' + item.episode + ' (' + item.point + ')</div>';
+                '<div class="recent-ep">' + (item.episode || "회차미상") + ' (' + item.point + ')</div>';
             grid.appendChild(div);
         });
-    } catch (e) { console.warn("Recent list load failed"); }
+    } catch (e) { console.warn("북마크 목록 로드 실패"); }
 };
 
 window.saveCurrentBookmark = async function() {
     if (!window.currentSeriesId) return;
     var scrollContainer = document.getElementById('viewerScrollContainer');
-    var point = document.getElementById('sliderCurrent').innerText + "P";
+    var point = (document.getElementById('sliderCurrent') ? document.getElementById('sliderCurrent').innerText : "1") + "P";
     
     if (scrollContainer && scrollContainer.style.display === 'block') {
         var pct = Math.round((scrollContainer.scrollTop / (scrollContainer.scrollHeight - scrollContainer.clientHeight)) * 100);
@@ -118,27 +121,25 @@ window.saveCurrentBookmark = async function() {
     }
 
     try {
-        if(window.showToast) window.showToast("💾 저장 중...");
+        if(window.showToast) window.showToast("💾 드라이브 저장 중...");
         await API.request('view_save_bookmark', {
-            type: "view_save_bookmark",
             seriesId: window.currentSeriesId,
             title: window.currentSeriesTitle,
-            episode: window.currentEpisodeName || "회차 정보 없음",
+            episode: window.currentEpisodeName || "읽는 중",
             point: point,
             folderId: API.folderId
         });
         if(window.showToast) window.showToast("✅ 저장 완료!");
         window.renderRecentList();
-    } catch (e) { if(window.showToast) window.showToast("❌ 저장 실패"); }
+    } catch (e) { console.error(e); }
 };
 
 window.getDynamicLink = function(series) {
     var saved = JSON.parse(localStorage.getItem('toki_domains')) || DEFAULT_DOMAINS;
     var cat = series.category || (series.metadata ? series.metadata.category : 'Webtoon');
-    var domain = "";
-    if (cat === "Novel") domain = "booktoki" + saved.booktoki + ".com/novel/";
-    else if (cat === "Manga") domain = "manatoki" + saved.manatoki + ".net/comic/";
-    else domain = "newtoki" + saved.newtoki + ".com/webtoon/";
+    var domain = (cat === "Novel") ? "booktoki" + saved.booktoki + ".com/novel/" : 
+                 (cat === "Manga") ? "manatoki" + saved.manatoki + ".net/comic/" : 
+                 "newtoki" + saved.newtoki + ".com/webtoon/";
     return "https://" + domain + series.sourceId;
 };
 
@@ -149,7 +150,7 @@ window.refreshDB = async function(forceId, silent, bypassCache) {
         var response = await API.request('view_get_library', { folderId: forceId || API.folderId, refresh: bypassCache });
         window.renderGrid(Array.isArray(response) ? response : (response.list || []));
         window.renderRecentList();
-    } catch (e) { console.error("RefreshDB Error:", e); }
+    } catch (e) { console.error(e); }
     finally { if(loader) loader.style.display = 'none'; }
 };
 
