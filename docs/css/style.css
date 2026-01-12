@@ -41,3 +41,42 @@ body { background: var(--bg); color: #eee; margin: 0; font-family: sans-serif; }
 .title { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
 .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #444; color: #eee; margin-right: 4px; }
 .badge.Novel { color: #ffd700; }
+
+
+/* [기존 스타일 하단에 추가] */
+
+/* 북마크 버튼 강제 표시 */
+.btn-icon[onclick*="saveCurrentBookmark"] {
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    color: #ffd700 !important;
+}
+
+/* 2쪽 보기 방지 (반쪽 화면 현상) */
+.viewer-spread > div {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+}
+.half { width: 100% !important; }
+
+/* 소설 스크롤 강제 활성화 */
+#viewerScrollContainer {
+    display: block !important;
+    position: fixed !important;
+    top: 0; left: 0; width: 100%; height: 100vh;
+    overflow-y: scroll !important;
+    padding: 100px 25px 150px 25px !important;
+    background: #1a1a1a !important;
+    z-index: 10 !important;
+    box-sizing: border-box !important;
+}
+
+/* 대시보드 최근 본 작품 디자인 */
+.recent-container { padding: 20px; margin-bottom: 10px; border-bottom: 1px solid #333; }
+.recent-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; }
+.recent-card { background: #333; padding: 10px; border-radius: 8px; min-width: 140px; cursor: pointer; border: 1px solid #444; }
+.recent-title { font-size: 13px; font-weight: bold; }
+.recent-ep { font-size: 11px; color: #888; }
