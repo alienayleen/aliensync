@@ -51,30 +51,40 @@
     </div>
 
     <div id="viewerOverlay" class="viewer-overlay">
-      
-        <div id="viewerControls" class="viewer-controls">
-            <div class="viewer-header">
-                <span class="viewer-title" id="viewerTitle">TokiViewer</span>
-                <button class="btn-icon" onclick="closeViewer()">×</button>
-            </div>
-            <div class="viewer-footer">
-                <div class="footer-row main-row">
-                    <button class="btn-icon" onclick="navigateViewer(-1)">◀</button>
-                    <input type="range" id="pageSlider" style="flex:1;">
-                    <button class="btn-icon" onclick="navigateViewer(1)">▶</button>
-                </div>
-         <div class="viewer-content" id="viewerContent">
-                 
-            <div id="viewerImageContainer" class="viewer-image-container"></div>
-            <div id="viewerScrollContainer" class="viewer-scroll-container" style="display:none;"></div>
-            
-            <div class="book-container" id="novelContainer" style="display:none;">
-                <div id="textColumns" class="text-columns">
-                    <div id="innerContent" class="inner-content"></div>
-                </div>
-            </div>
-            <div id="pageCounter" class="page-counter">- / -</div>
+    <div id="viewerControls" class="viewer-controls">
+        <div class="viewer-header">
+            <span class="viewer-title" id="viewerTitle">TokiViewer</span>
+            <button class="btn-icon" onclick="closeViewer()">×</button>
         </div>
+        <div class="viewer-footer">
+            <div class="footer-row main-row">
+                <button class="btn-icon" onclick="navigateViewer(-1)">◀</button>
+                <input type="range" id="pageSlider" style="flex:1;">
+                <button class="btn-icon" onclick="navigateViewer(1)">▶</button>
+            </div>
+            <div class="footer-row settings-row">
+                <button class="btn-toggle" onclick="changeFontSize(-2)">가-</button>
+                <button class="btn-toggle" onclick="changeFontSize(2)">가+</button>
+                <button id="btnScroll" class="btn-toggle" onclick="toggleScrollMode()">스크롤</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="viewer-content" id="viewerContent">
+        <div class="side-tap left-tap"></div>
+        <div class="side-tap right-tap"></div>
+
+        <div id="viewerImageContainer" class="viewer-image-container"></div>
+        <div id="viewerScrollContainer" class="viewer-scroll-container" style="display:none;"></div>
+        
+        <div class="book-container" id="novelContainer" style="display:none;">
+            <div id="textColumns" class="text-columns">
+                <div id="innerContent" class="inner-content"></div>
+            </div>
+        </div>
+        <div id="pageCounter" class="page-counter">- / -</div>
+    </div>
+</div>
                 <div class="footer-row settings-row">
                     <button class="btn-toggle" onclick="changeFontSize(-2)">가-</button>
                     <button class="btn-toggle" onclick="changeFontSize(2)">가+</button>
