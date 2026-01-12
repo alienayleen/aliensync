@@ -104,14 +104,25 @@ window.saveCurrentBookmark = async function() {
 };
 
 // 초기 실행
+/* main.js 내 수정 */
 window.refreshDB = async function(f, s, b) {
-    const loader = document.getElementById('pageLoader');
+    var loader = document.getElementById('pageLoader');
     if (loader) loader.style.display = 'flex';
     try {
-        const response = await API.request('view_get_library', { folderId: API.folderId, refresh: b });
+        var response = await API.request('view_get_library', { folderId: API.folderId, refresh: b });
         window.renderGrid(Array.isArray(response) ? response : []);
-        if (window.renderRecentList) await window.renderRecentList();
-    } finally { if(loader) loader.style.display = 'none'; }
+        
+        // 🔴 북마크 로딩 실패가 전체를 멈추지 않게 try-catch로 감쌉니다.
+        try {
+            if (typeof window.renderRecentList === 'function') await window.renderRecentList();
+        } catch (bookmarkErr) {
+            console.warn("북마크 초기 로드 건너뜀:", bookmarkErr);
+        }
+    } catch (e) {
+        console.error("라이브러리 로드 실패:", e);
+    } finally {
+        if(loader) loader.style.display = 'none';
+    }
 };
 
 window.addEventListener('DOMContentLoaded', () => { if (window.API && API.isConfigured()) window.refreshDB(); });
