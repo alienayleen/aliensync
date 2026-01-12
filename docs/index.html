@@ -212,3 +212,11 @@
     <script type="module" src="js/include.js?v=3.3.4"></script>
 </body>
 </html>
+
+/* viewer_modules/index.js 맨 하단 */
+
+// 내부 함수들을 전역(window)으로 공개하여 외부 파일(main.js)에서 쓸 수 있게 합니다.
+window.openEpisodeList = openEpisodeList; 
+window.navigateViewer = navigateViewer;
+window.closeViewer = closeViewer;
+// ... 필요한 다른 함수들도 같은 방식으로 추가하세요.
