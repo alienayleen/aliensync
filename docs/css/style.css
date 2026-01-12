@@ -966,3 +966,36 @@ foliate-view {
     column-count: 1 !important;
     height: auto !important;
 }
+
+/* 모바일용
+
+/* 1. 네비게이션 영역을 UI 컨트롤 레이어보다 위로 올림 */
+.nav-zone, .side-tap {
+    z-index: 100 !important; /* 검정 바 레이어(20)보다 높게 설정 */
+    background: rgba(0,0,0,0); /* 투명 배경 유지 */
+}
+
+/* 2. 아이폰/모바일용 UI 크기 축소 및 여백 조정 */
+@media (max-width: 800px) {
+    .viewer-header { height: 45px; padding: 0 10px; }
+    .viewer-footer { padding: 8px; gap: 5px; }
+    .slider-container { max-width: 100%; }
+    
+    /* 하단 버튼 크기 조정 */
+    .btn-toggle {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+}
+
+/* 3. 소설 스크롤 모드 전용 CSS */
+.book-container.scroll-mode {
+    overflow-y: auto !important;
+    display: block !important;
+}
+.book-container.scroll-mode .text-columns {
+    column-width: auto !important;
+    column-count: 1 !important;
+    height: auto !important;
+    transform: none !important; /* 페이지 넘김 효과 제거 */
+}
