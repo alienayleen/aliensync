@@ -411,13 +411,23 @@ h1 {
 }
 
 /* Layer 2: Controls */
+/* 1. 뷰어 컨트롤 전체 틀은 클릭을 통과시켜야 합니다. */
 .viewer-controls {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  pointer-events: none; /* Let clicks pass through empty areas */
+    position: absolute;
+    inset: 0;
+    z-index: 5000;
+    pointer-events: none; /* [핵심] 중앙 클릭이 본문(viewerContent)으로 전달되게 함 */
 }
 
+/* 2. 대신 검정 바 내부의 버튼들은 클릭이 되어야 합니다. */
+.viewer-header, .viewer-footer {
+    pointer-events: auto; /* 버튼 클릭은 다시 활성화 */
+}
+
+/* 3. 사이드 탭이 본문 위에서 확실히 클릭을 가로채게 합니다. */
+.side-tap {
+    z-index: 2000 !important; /* 본문 내용보다 위에 배치 */
+}
 /* Header & Footer inside Controls Layer */
 /* Header & Footer inside Controls Layer */
 .viewer-header, .viewer-footer {
