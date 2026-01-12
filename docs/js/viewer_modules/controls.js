@@ -1,8 +1,7 @@
 import { vState, currentBookList, currentBookIndex } from './state.js';
 import { applyTextSettings, recalcSpreads, renderCurrentSpread } from './renderer.js';
 import { navigateViewer } from './navigation.js';
-// docs/js/viewer_modules/controls.js
-import { loadViewer, closeEpisodeModal } from './actions.js'; // closeEpisodeModal imported
+import { loadViewer, closeEpisodeModal } from './actions.js';
 import { showToast } from './utils.js';
 
 export function updateNavHandlers() {
@@ -20,7 +19,6 @@ export function updateSliderUI() {
 
     if (!vState.spreads || vState.spreads.length === 0) return;
 
-    // Current page number (1-based)
     const currentImgIndex = vState.spreads[vState.currentSpreadIndex][0] + 1;
     const totalImages = vState.images.length;
 
@@ -43,21 +41,15 @@ export function onSliderInput(val) {
 }
 
 export function onSliderChange(val) {
-    const targetPage = parseInt(val) - 1; // 0-based index
+    const targetPage = parseInt(val) - 1;
     const spreadIdx = vState.spreads.findIndex(spread => spread.includes(targetPage));
-    if (spreadIdx >= 0) {
-        vState.currentSpreadIndex = spreadIdx;
-        renderCurrentSpread();
-    } else {
-        vState.currentSpreadIndex = Math.min(targetPage, vState.spreads.length - 1);
-        renderCurrentSpread();
-    }
+    vState.currentSpreadIndex = spreadIdx >= 0 ? spreadIdx : Math.min(targetPage, vState.spreads.length - 1);
+    renderCurrentSpread();
 }
 
 export function toggleControls() {
     const controls = document.getElementById('viewerControls');
-    if (!controls) return;
-    controls.classList.toggle('show');
+    if (controls) controls.classList.toggle('show');
 }
 
 export function handleViewerClick(e) {
@@ -67,7 +59,6 @@ export function handleViewerClick(e) {
 }
 
 export function updateButtonStates() {
-    // Visibility Toggle
     const isEpub = vState.epubMode;
     document.querySelectorAll('.image-only').forEach(el => el.style.display = isEpub ? 'none' : '');
     document.querySelectorAll('.epub-only').forEach(el => el.style.display = isEpub ? 'inline-block' : 'none');
@@ -88,12 +79,7 @@ export function toggleViewMode() {
     vState.mode = (vState.mode === '1page') ? '2page' : '1page';
     localStorage.setItem('toki_v_mode', vState.mode);
     updateButtonStates();
-    
-    if (vState.epubMode) {
-        applyTextSettings(); 
-    } else {
-        recalcSpreads(false); 
-    }
+    vState.epubMode ? applyTextSettings() : recalcSpreads(false); 
 }
 
 export function toggleCoverMode() {
@@ -113,8 +99,6 @@ export function toggleRtlMode() {
 export function toggleScrollMode() {
     vState.scrollMode = !vState.scrollMode;
     localStorage.setItem('toki_v_scroll', vState.scrollMode);
-    
-    // Refresh Viewer
     loadViewer(currentBookIndex);
 }
 
@@ -126,82 +110,50 @@ export function togglePreloadMode() {
 }
 
 export function changeFontSize(delta) {
-    if (!vState.epubMode || !vState.foliateView) return;
-    
+    if (!vState.epubMode) return;
     vState.textSettings.fontSize += delta;
-    if(vState.textSettings.fontSize < 12) vState.textSettings.fontSize = 12;
-    if(vState.textSettings.fontSize > 48) vState.textSettings.fontSize = 48; 
-    
+    vState.textSettings.fontSize = Math.max(12, Math.min(48, vState.textSettings.fontSize));
     localStorage.setItem('toki_v_fontsize', vState.textSettings.fontSize);
-    
     applyTextSettings();
-    showToast(`글자 크기: ${vState.textSettings.fontSize}px`);
 }
 
 export function loadViewerSettings() {
     vState.mode = localStorage.getItem('toki_v_mode') || '1page';
     vState.coverPriority = (localStorage.getItem('toki_v_cover') === 'true');
-
     vState.rtlMode = (localStorage.getItem('toki_v_rtl') === 'true');
-    vState.preload = (localStorage.getItem('toki_v_preload') !== 'false'); // Default true
+    vState.preload = (localStorage.getItem('toki_v_preload') !== 'false');
     vState.scrollMode = (localStorage.getItem('toki_v_scroll') === 'true'); 
     
     const savedFs = localStorage.getItem('toki_v_fontsize');
     if(savedFs) vState.textSettings.fontSize = parseInt(savedFs);
-    
     updateButtonStates();
 }
 
-/**
- * 뷰어를 닫고 리소스를 정리합니다.
- */
 export function closeViewer() {
     const viewer = document.getElementById('viewerOverlay');
     const container = document.getElementById('viewerImageContainer');
-    
-    if (vState.images) {
-        vState.images.forEach(img => URL.revokeObjectURL(img.src));
-    }
+    if (vState.images) vState.images.forEach(img => URL.revokeObjectURL(img.src));
     vState.images = [];
     vState.spreads = [];
-    
     container.innerHTML = '';
     viewer.style.display = 'none';
     document.body.classList.remove('no-scroll');
 }
 
-// Key Controls
 export function initKeyControls() {
     document.addEventListener('keydown', (e) => {
-        if (document.getElementById('viewerOverlay').style.display === 'flex') {
-            if (e.key === 'Escape') {
-                closeViewer();
-                e.preventDefault();
-            }
-            else if (e.key === 'ArrowLeft') {
-                navigateViewer(vState.rtlMode ? 1 : -1);
-                e.preventDefault();
-            }
-            else if (e.key === 'ArrowRight') {
-                navigateViewer(vState.rtlMode ? -1 : 1);
-                e.preventDefault();
-            }
-            else if (e.key === 'ArrowUp') {
-                navigateViewer(-1); // Prev
-                e.preventDefault();
-            }
-            else if (e.key === 'ArrowDown') {
-                navigateViewer(1); // Next
-                e.preventDefault();
-            }
-            else if (e.key === ' ' || e.key === 'Enter') {
-                navigateViewer(1);
-                e.preventDefault();
-            }
-        } else if (document.getElementById('episodeModal').style.display === 'flex') {
-             if (e.key === 'Escape') closeEpisodeModal(); // closeEpisodeModal is in actions/episode.js
-             // This needs to call the imported function.
-             // We'll export this handler or run it in index.js
+        const viewerVisible = document.getElementById('viewerOverlay').style.display === 'flex';
+        const modalVisible = document.getElementById('episodeModal').style.display === 'flex';
+
+        if (viewerVisible) {
+            if (e.key === 'Escape') closeViewer();
+            else if (e.key === 'ArrowLeft') navigateViewer(vState.rtlMode ? 1 : -1);
+            else if (e.key === 'ArrowRight') navigateViewer(vState.rtlMode ? -1 : 1);
+            else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') navigateViewer(e.key === 'ArrowUp' ? -1 : 1);
+            else if (e.key === ' ' || e.key === 'Enter') navigateViewer(1);
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', 'Enter', 'Escape'].includes(e.key)) e.preventDefault();
+        } else if (modalVisible && e.key === 'Escape') {
+            closeEpisodeModal();
         }
     });
 }
