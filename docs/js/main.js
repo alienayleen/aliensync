@@ -547,83 +547,63 @@ function aliasTextTouchZones() {
 // [수정] main.js 초기화 블록
 window.addEventListener('DOMContentLoaded', () => {
 
-  // ==========================================================
-  // Viewer Interaction (robust, works even if viewer functions
-  // load AFTER main.js)
-  // - Center tap: toggle black bars (#viewerControls.show)
-  // - Left/Right tap: page turn (delegates to viewer if present,
-  //   otherwise clicks nav zones)
-  // ==========================================================
-  const viewerContent = document.getElementById('viewerContent');
-
+ // ✅ 텍스트(EPUB/소설) 좌우넘김(paged) + 스크롤(scroll) 공통 탭처리
+(() => {
   const LEFT = 35;
   const RIGHT = 65;
 
-  function getXPercent(e) {
-    const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
-    if (!clientX || !window.innerWidth) return 50;
-    return (clientX / window.innerWidth) * 100;
-  }
+  const isTextViewerEvent = (e) => {
+    const t = e.target;
+    if (!t) return false;
 
-  function isUiElement(target) {
-    if (!target) return false;
-    // 클릭이 UI에서 발생하면 본문 탭 처리 제외
+    // 텍스트 뷰어 영역에서만 동작시키기 (웹툰 이미지뷰어 등 영향 최소화)
     return !!(
-      target.closest('#viewerControls') ||
-      target.closest('.viewer-header') ||
-      target.closest('.viewer-footer') ||
-      target.closest('button') ||
-      target.closest('input') ||
-      target.closest('a')
+      t.closest('#viewerScrollContainer') ||
+      t.closest('.epub-content') ||
+      t.closest('foliate-view') ||
+      t.closest('.book-container') ||
+      t.closest('.viewer-page-wrapper.text-mode')
     );
-  }
+  };
 
-  function clickNavZone(which) {
-    // 이미지뷰어: nav-zone이 있으면 그쪽을 우선 클릭
-    const sel = which === 'prev' ? '.nav-prev, .viewer-nav-prev, [data-nav="prev"]'
-                                 : '.nav-next, .viewer-nav-next, [data-nav="next"]';
-    const el = document.querySelector(sel);
-    if (el) {
-      el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-      return true;
-    }
-    return false;
-  }
+  const onTap = (e) => {
+    if (!isTextViewerEvent(e)) return;
 
-  function viewerTapHandler(e) {
-    // 뷰어가 열려있는 상황에서만 개입
-    const overlay = document.getElementById('viewerOverlay');
-    const isOpen = overlay && (overlay.style.display === 'flex' || overlay.style.display === 'block');
-    if (!isOpen) return;
+    // 버튼/인풋/링크 등 UI 클릭은 무시
+    const t = e.target;
+    if (t && (t.tagName === 'BUTTON' || t.tagName === 'INPUT' || t.tagName === 'A' ||
+              t.closest('button') || t.closest('input') || t.closest('a'))) return;
 
-    if (isUiElement(e.target)) return;
+    const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    if (typeof clientX !== 'number') return;
 
-    const xPercent = getXPercent(e);
+    const xPercent = (clientX / window.innerWidth) * 100;
 
-    // 1) Center: toggle bars
+    // 중앙: 검정바 토글
     if (xPercent >= LEFT && xPercent <= RIGHT) {
       const controls = document.getElementById('viewerControls');
       if (controls) controls.classList.toggle('show');
-
-      e.preventDefault?.();
-      e.stopPropagation?.();
+      e.preventDefault();
+      e.stopPropagation();
       return;
     }
 
-    // 2) Left/Right: delegate to viewer if available
-    if (typeof window.handleInteraction === 'function') {
-      return window.handleInteraction(e);
+    // 좌/우: 페이지 이동
+    const dir = (xPercent < LEFT) ? -1 : 1;
+
+    if (typeof window.navigateViewer === 'function') {
+      window.navigateViewer(dir);
     }
 
-    // 3) Fallback: click nav zones
-    if (xPercent < LEFT) clickNavZone('prev');
-    else clickNavZone('next');
-  }
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
-  if (viewerContent) {
-    viewerContent.addEventListener('click', viewerTapHandler, true);
-    viewerContent.addEventListener('touchstart', viewerTapHandler, { passive: false, capture: true });
-  }
+  // 캡처링으로 최상단에서 먼저 잡아야 paged 모드에서도 100% 먹음
+  document.addEventListener('touchstart', onTap, { passive: false, capture: true });
+  document.addEventListener('click', onTap, true);
+})();
+
 
   // ==========================================================
   // Existing initialization (handshake, config, etc.)
