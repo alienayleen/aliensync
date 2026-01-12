@@ -439,41 +439,60 @@ function toggleSettings() {
 window.addEventListener('DOMContentLoaded', () => {
 
     const viewerContent = document.getElementById('viewerContent');
-if (viewerContent && typeof handleInteraction === 'function') {
+  if (viewerContent && typeof handleInteraction === 'function') {
     viewerContent.addEventListener('click', handleInteraction, true);
     viewerContent.addEventListener('touchstart', handleInteraction, { passive: false });
-}
+  }
 
-    // 1. 사이드 클릭 시 검정 바(UI) 호출 차단 로직 (최상단에 배치)
-    document.addEventListener('click', function(e) {
-        const xPercent = (e.clientX / window.innerWidth) * 100;
-        
-        // 화면의 좌우 35% 영역을 누를 때
-        if (xPercent < 35 || xPercent > 65) {
-            // 이 구역에서는 페이지 이동만 발생하고, 배경의 '메뉴 토글'은 무시하도록 차단
-            e.stopPropagation(); 
-        }
-    }, true); // 'true' 옵션(Capturing)을 주어 이벤트를 가장 먼저 낚아챕니다.
+    // ✅ 텍스트(스크롤) 모드: 중앙 탭하면 컨트롤(검정 바) 토글
+  const scrollEl = document.getElementById('viewerScrollContainer');
+  if (scrollEl) {
+    const LEFT = 35;
+    const RIGHT = 65;
+
+    const toggleBars = (e) => {
+      // 버튼/인풋/컨트롤 클릭은 무시
+      const t = e.target;
+      if (t && (t.tagName === 'BUTTON' || t.tagName === 'INPUT' || t.closest('button') || t.closest('input'))) return;
+
+      const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      const xPercent = (clientX / window.innerWidth) * 100;
+
+      // 중앙만 토글
+      if (xPercent >= LEFT && xPercent <= RIGHT) {
+        const controls = document.getElementById('viewerControls');
+        if (controls) controls.classList.toggle('show');
+
+        // 중앙 탭은 페이지 이동/기타 클릭으로 새지 않게 차단
+        e.preventDefault?.();
+        e.stopPropagation?.();
+      }
+      // 좌우는 아무것도 안 함 (페이지 넘김 로직이 있으면 그쪽이 처리)
+    };
+
+    scrollEl.addEventListener('click', toggleBars, true);
+    scrollEl.addEventListener('touchstart', toggleBars, { passive: false, capture: true });
+
 
     // 2. 기존 로직 (handshake 등)
     window.addEventListener("message", handleMessage, false);
     
-    const el = document.getElementById('viewerVersionDisplay');
-    if(el) el.innerText = `Viewer Version: ${VIEWER_VERSION}`;
-    
-    if (API.isConfigured()) {
+    const verEl = document.getElementById('viewerVersionDisplay');
+  if (verEl) verEl.innerText = `Viewer Version: ${VIEWER_VERSION}`;
+
+  if (API.isConfigured()) {
+    refreshDB(null, true);
+    loadDomains();
+  } else {
+    setTimeout(() => {
+      if (!API.isConfigured()) {
+        document.getElementById('configModal').style.display = 'flex';
+      } else {
         refreshDB(null, true);
-        loadDomains();
-    } else {
-        setTimeout(() => {
-            if (!API.isConfigured()) {
-                document.getElementById('configModal').style.display = 'flex';
-            } else {
-                 refreshDB(null, true);
-            }
-            loadDomains();
-        }, 1000);
-    }
+      }
+      loadDomains();
+    }, 1000);
+  }
 });
 
 // 🚀 Expose Globals for HTML onclick & Modules
