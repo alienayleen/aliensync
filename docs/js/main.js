@@ -722,4 +722,187 @@ async function loadHistory() {
             container.appendChild(div);
         });
     } catch (e) { console.log("기록 로드 실패"); }
+
+
+    /* ============================
+ * Paged(좌우 넘김) 모드: 탭 내비 + 중앙 토글 + 리사이즈 스냅 + 폰트 버튼 복구
+ * ============================ */
+(function () {
+  const STATE = {
+    fontPx: parseInt(localStorage.getItem("toki_font_px") || "18", 10),
+  };
+
+  function qs(id) { return document.getElementById(id); }
+
+  function getScrollEl() {
+    // EPUB/텍스트는 보통 viewerScrollContainer를 씁니다.
+    return qs("viewerScrollContainer");
+  }
+
+  function getControlsEl() {
+    // 검정 바 컨트롤 레이어 id가 viewerControls인 것으로 보입니다.
+    return qs("viewerControls");
+  }
+
+  function isViewerOpen() {
+    const ov = qs("viewerOverlay");
+    return !!(ov && ov.style && ov.style.display !== "none");
+  }
+
+  function isPagedMode() {
+    const scrollEl = getScrollEl();
+    if (!scrollEl) return false;
+
+    // paged-mode 클래스 또는 epub-content.paged-view 존재로 판정
+    if (scrollEl.classList.contains("paged-mode")) return true;
+    const pagedContent = scrollEl.querySelector(".epub-content.paged-view");
+    return !!pagedContent;
+  }
+
+  function pageWidth() {
+    // paged 모드 기준 폭: scrollEl의 clientWidth(가장 안정적)
+    const scrollEl = getScrollEl();
+    if (!scrollEl) return window.innerWidth;
+    return scrollEl.clientWidth || window.innerWidth;
+  }
+
+  function snapToNearestPage() {
+    const scrollEl = getScrollEl();
+    if (!scrollEl || !isPagedMode()) return;
+
+    const w = pageWidth();
+    if (!w) return;
+
+    const current = scrollEl.scrollLeft || 0;
+    const page = Math.round(current / w);
+    const target = page * w;
+
+    scrollEl.scrollLeft = target;
+  }
+
+  function pagedNavigate(dir) {
+    const scrollEl = getScrollEl();
+    if (!scrollEl || !isPagedMode()) return;
+
+    const w = pageWidth();
+    if (!w) return;
+
+    // 현재 페이지 기준으로 한 페이지 이동
+    const current = scrollEl.scrollLeft || 0;
+    const page = Math.round(current / w);
+    const next = Math.max(0, page + dir);
+    scrollEl.scrollLeft = next * w;
+  }
+
+  function toggleBars() {
+    const controls = getControlsEl();
+    if (!controls) return;
+    controls.classList.toggle("show");
+  }
+
+  function ensureTapZones() {
+    // viewer-content 위에 강제로 탭존을 올립니다.
+    const viewerContent = qs("viewerContent");
+    if (!viewerContent) return;
+
+    let wrap = viewerContent.querySelector(".tapzones-wrap");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.className = "tapzones-wrap";
+      viewerContent.appendChild(wrap);
+
+      const left = document.createElement("div");
+      left.className = "tapzone left";
+
+      const mid = document.createElement("div");
+      mid.className = "tapzone mid";
+
+      const right = document.createElement("div");
+      right.className = "tapzone right";
+
+      wrap.appendChild(left);
+      wrap.appendChild(mid);
+      wrap.appendChild(right);
+
+      const stop = (e) => {
+        // 버튼/인풋 위에서 탭은 무시
+        const t = e.target;
+        if (t && (t.tagName === "BUTTON" || t.tagName === "INPUT" || t.closest("button") || t.closest("input"))) return false;
+        e.preventDefault?.();
+        e.stopPropagation?.();
+        return true;
+      };
+
+      // 좌/우는 페이지 넘김, 중앙은 바 토글
+      left.addEventListener("click", (e) => { if (!stop(e)) return; pagedNavigate(-1); }, true);
+      right.addEventListener("click", (e) => { if (!stop(e)) return; pagedNavigate(1); }, true);
+      mid.addEventListener("click", (e) => { if (!stop(e)) return; toggleBars(); }, true);
+
+      // 모바일 터치 대응
+      left.addEventListener("touchstart", (e) => { if (!stop(e)) return; pagedNavigate(-1); }, { passive: false, capture: true });
+      right.addEventListener("touchstart", (e) => { if (!stop(e)) return; pagedNavigate(1); }, { passive: false, capture: true });
+      mid.addEventListener("touchstart", (e) => { if (!stop(e)) return; toggleBars(); }, { passive: false, capture: true });
+    }
+  }
+
+  function applyFontPx(px) {
+    STATE.fontPx = Math.max(12, Math.min(40, px));
+    localStorage.setItem("toki_font_px", String(STATE.fontPx));
+
+    const scrollEl = getScrollEl();
+    if (!scrollEl) return;
+
+    // Foliate/Legacy EPUB 공통: epub-content 전체에 폰트 사이즈 적용
+    const targets = scrollEl.querySelectorAll(".epub-content, .epub-content *");
+    targets.forEach(el => {
+      // 너무 과격하면 .epub-content에만 적용하도록 바꿔도 됨
+      el.style.fontSize = STATE.fontPx + "px";
+      el.style.lineHeight = "1.8";
+    });
+  }
+
+  function wireFontButtons() {
+    // 버튼 텍스트가 "가-" "가+" 인 것으로 보이므로 텍스트로 잡아 붙입니다.
+    // (ID가 없어서 이 방식이 가장 안전)
+    const controls = getControlsEl();
+    if (!controls) return;
+
+    const btns = controls.querySelectorAll("button, .btn-toggle");
+    btns.forEach(b => {
+      const txt = (b.innerText || "").trim();
+      if (txt === "가-") {
+        b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); applyFontPx(STATE.fontPx - 2); };
+      }
+      if (txt === "가+") {
+        b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); applyFontPx(STATE.fontPx + 2); };
+      }
+    });
+  }
+
+  // 뷰어 열릴 때마다 탭존/폰트 버튼/스냅 강제
+  function onTick() {
+    if (!isViewerOpen()) return;
+
+    ensureTapZones();
+    wireFontButtons();
+
+    // 오른쪽 쏠림의 핵심: 현재 scrollLeft를 “현재 폭”에 맞게 스냅
+    if (isPagedMode()) snapToNearestPage();
+  }
+
+  // 초기/리사이즈 스냅
+  window.addEventListener("resize", () => {
+    if (!isViewerOpen()) return;
+    if (isPagedMode()) snapToNearestPage();
+  });
+
+  // 주기적으로 뷰어 상태를 감지 (viewer open 훅을 확실히 모르므로 안전하게 polling)
+  setInterval(onTick, 400);
+
+  // 최초 폰트 적용
+  document.addEventListener("DOMContentLoaded", () => {
+    applyFontPx(STATE.fontPx);
+  });
+})();
+
 }
