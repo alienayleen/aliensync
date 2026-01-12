@@ -997,3 +997,29 @@ foliate-view {
   font-size: 14px;
   color: var(--accent);
 }
+
+/* ================================
+   Text Viewer (Novel/EPUB) top spacing ONLY
+   ================================ */
+
+/* EPUB 컨테이너가 상단에 딱 붙는 문제 완화 */
+#viewerScrollContainer.epub-mode {
+  padding-top: 70px;
+  padding-bottom: 120px;
+  box-sizing: border-box;
+}
+
+/* Foliate/Legacy EPUB 본문 자체에도 여백 */
+#viewerScrollContainer.epub-mode .epub-content,
+#viewerScrollContainer.epub-mode .epub-content.paged-view,
+#viewerScrollContainer.epub-mode .epub-content.scroll-view {
+  padding-top: 70px;
+  padding-bottom: 120px;
+  box-sizing: border-box;
+}
+
+/* “New Text Viewer Layout” (book-container) 쓰는 경우 */
+.book-container .inner-content {
+  padding-top: 80px;
+  padding-bottom: 120px;
+}
