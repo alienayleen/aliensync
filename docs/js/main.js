@@ -495,3 +495,25 @@ window.saveActiveSettings = saveActiveSettings;
 window.saveManualConfig = saveManualConfig;
 window.showToast = showToast; // Used by viewer?
 window.renderGrid = renderGrid; // Debugging
+
+
+/**
+ * 최근 본 작품 및 북마크 저장
+ * @param {string} seriesId - 작품 ID
+ * @param {string} epId - 에피소드 ID
+ * @param {number} page - 마지막 읽은 페이지/위치
+ */
+async function saveProgress(seriesId, epId, page) {
+    try {
+        await API.request('update_history', {
+            seriesId: seriesId,
+            episodeId: epId,
+            lastPage: page,
+            timestamp: new Date().getTime()
+        });
+        console.log("📍 진도가 구글 드라이브에 저장되었습니다.");
+    } catch (e) {
+        // 로컬스토리지에 백업 (오프라인 대비)
+        localStorage.setItem(`last_${seriesId}`, JSON.stringify({epId, page}));
+    }
+}
