@@ -26,6 +26,29 @@ let allSeries = [];
 
 // 초기화
 window.addEventListener('DOMContentLoaded', () => {
+
+    // [추가] 모바일/PC 통합 터치 및 검정 바 제어 로직
+const handleInteraction = (e) => {
+    if (['BUTTON', 'INPUT', 'A', 'LABEL'].includes(e.target.tagName)) return;
+    const x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+    const xPercent = (x / window.innerWidth) * 100;
+
+    if (xPercent < 35 || xPercent > 65) {
+        // 좌우 35% 영역: 페이지 이동만 하고 검정 바 호출은 차단
+        e.stopPropagation(); 
+        if (xPercent < 35) navigateViewer(-1);
+        else navigateViewer(1);
+    } else {
+        // 중앙 30% 영역: 이 구역을 눌러야만 검정 바(UI) 토글 함수가 작동함
+        if (typeof toggleViewerControls === 'function') toggleViewerControls();
+    }
+};
+
+const viewerContent = document.getElementById('viewerContent');
+if (viewerContent) {
+    viewerContent.addEventListener('click', handleInteraction, true);
+    viewerContent.addEventListener('touchstart', handleInteraction, { passive: false });
+}
     
     // Listener for Zero-Config (Tampermonkey Injection)
     window.addEventListener("message", handleMessage, false);
@@ -508,3 +531,28 @@ window.saveManualConfig = saveManualConfig;
 window.showToast = showToast; // Used by viewer?
 window.renderGrid = renderGrid; // Debugging
 
+window.saveReadHistory = async function(seriesId, seriesName) {
+    try {
+        await API.request('view_save_bookmark', {
+            folderId: API.folderId, seriesId: seriesId, name: seriesName, time: new Date().getTime()
+        });
+        loadHistory();
+    } catch (e) { console.log("기록 저장 실패"); }
+};
+
+async function loadHistory() {
+    const container = document.getElementById('recentList');
+    if (!container) return;
+    try {
+        const res = await API.request('view_get_bookmarks', { folderId: API.folderId });
+        if (!res) return;
+        container.innerHTML = '';
+        Object.values(res).sort((a,b) => b.time - a.time).slice(0, 6).forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'recent-item';
+            div.innerText = `📖 ${item.name}`;
+            div.onclick = () => openEpisodeList(item.seriesId, item.name, 0);
+            container.appendChild(div);
+        });
+    } catch (e) { console.log("기록 로드 실패"); }
+}
