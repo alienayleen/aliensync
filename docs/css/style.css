@@ -988,14 +988,21 @@ foliate-view {
     }
 }
 
-/* 3. 소설 스크롤 모드 전용 CSS */
+/* 소설 스크롤 모드 강제 적용 */
 .book-container.scroll-mode {
-    overflow-y: auto !important;
     display: block !important;
+    overflow-y: auto !important; /* 세로 스크롤 허용 */
+    height: 100% !important;
 }
+
 .book-container.scroll-mode .text-columns {
+    column-count: 1 !important;  /* 다단 해제 */
     column-width: auto !important;
-    column-count: 1 !important;
-    height: auto !important;
-    transform: none !important; /* 페이지 넘김 효과 제거 */
+    height: auto !important;     /* 높이 제한 해제 */
+    transform: none !important;  /* 좌우 이동 효과 제거 */
+}
+
+.book-container.scroll-mode .inner-content {
+    padding-bottom: 100px; /* 맨 밑 여백 */
+}
 }
