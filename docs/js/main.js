@@ -35,11 +35,22 @@ const handleInteraction = (e) => {
     const controls = document.getElementById('viewerControls');
 
     if (xPercent < 35 || xPercent > 65) {
-        // 좌우 35% 영역: 페이지 이동만 하고 검정 바 호출은 차단
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-}
+        // [사이드 35%] 페이지 넘김
+        e.stopPropagation(); 
+        
+        // 페이지를 넘길 때는 검정 바를 무조건 닫음
+        if (controls) controls.classList.remove('show');
+        
+        if (xPercent < 35) navigateViewer(-1);
+        else navigateViewer(1);
+    } 
+    else {
+        // [중앙 30%] 검정 바 토글 (나오게/들어가게)
+        if (controls) {
+            console.log("📍 중앙 클릭 감지: 검정 바 상태를 바꿉니다.");
+            controls.classList.toggle('show');
+        }
+    }
 };
 
 const viewerContent = document.getElementById('viewerContent');
