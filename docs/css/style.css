@@ -929,3 +929,9 @@ foliate-view {
 }
 .left-tap { left: 0; }
 .right-tap { right: 0; }
+
+
+@media (max-width: 800px) {
+    .side-tap {
+        width: 35% !important; /* 터치 영역을 35%로 넓혀서 검정 바 호출 방지 */
+        z-index: 100 !important; /* 클릭 우선순위 높임 */
