@@ -2,13 +2,12 @@
  * 🚀 Main Dashboard Logic (Final Hardcoded Version)
  */
 
-// 🔴 사용자님이 주신 정보 강제 주입
+// [1] 상수 설정
 const MY_GAS_ID = "AKfycbx7xMPoRnPeDZGvcJbqP0FJNX1tOvk5YYdLaLWbSqGftvSnrhkZwtDSlbw2_5TNKXpq-A";
 const MY_FOLDER_ID = "1pqN828teolRePME7XmXBZsjCwRBmWrts";
-
 var NO_IMAGE_SVG = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%22%20y%3D%2250%22%20font-family%3D%22Arial%22%20font-size%3D%2212%22%20fill%3D%22%23666%22%20text-anchor%3D%22middle%22%20dy%3D%22.3em%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E";
 
-// [1] 설정 저장 함수 (혹시 나중에 고칠 때를 대비해 전역 등록)
+// [2] 설정 저장 함수
 window.saveSettings = function() {
     const gasIdInput = document.getElementById('gasId');
     const folderIdInput = document.getElementById('folderId');
@@ -22,7 +21,7 @@ window.saveSettings = function() {
     location.reload();
 };
 
-// [2] 목록 열기 핸들러
+// [3] 목록 열기 핸들러
 window.handleOpenEpisodes = function(id, name, index) {
     if (typeof window.openEpisodeList === 'function') {
         window.openEpisodeList(id, name, index);
@@ -31,7 +30,7 @@ window.handleOpenEpisodes = function(id, name, index) {
     }
 };
 
-// [3] 그리드 렌더링
+// [4] 그리드 렌더링
 window.renderGrid = function(seriesList) {
     const grid = document.getElementById('grid');
     if (!grid) return;
@@ -54,19 +53,17 @@ window.renderGrid = function(seriesList) {
     });
 };
 
-// [4] 데이터 로드 (접속 시 자동 ID 세팅)
+// [5] 데이터 로드 및 초기화
 window.refreshDB = async function(f, s, b) {
     const loader = document.getElementById('pageLoader');
     if (loader) loader.style.display = 'flex';
 
-    // 🔴 접속할 때마다 코드가 스스로 ID를 다시 박습니다.
     let config = JSON.parse(localStorage.getItem('tokisync_config') || '{}');
     config.gasUrl = `https://script.google.com/macros/s/${MY_GAS_ID}/exec`;
     config.folderId = MY_FOLDER_ID;
     localStorage.setItem('tokisync_config', JSON.stringify(config));
 
     try {
-        // API 요청 시 강제로 hardcoded된 folderId 사용
         const response = await API.request('view_get_library', { folderId: MY_FOLDER_ID, refresh: b });
         window.renderGrid(Array.isArray(response) ? response : []);
         if (window.renderRecentList) window.renderRecentList().catch(() => {});
@@ -78,4 +75,10 @@ window.refreshDB = async function(f, s, b) {
 };
 
 window.getDynamicLink = (s) => "#"; 
-window.addEventListener('DOMContentLoaded', () => { if (window.API) window.refreshDB(); });
+
+// [6] 실행부: 모든 괄호와 세미콜론 확인 완료
+window.addEventListener('DOMContentLoaded', () => { 
+    if (window.API) {
+        window.refreshDB();
+    } 
+});
