@@ -411,19 +411,21 @@ h1 {
 }
 
 /* Layer 2: Controls */
-/* 1. 뷰어 컨트롤 전체 틀은 클릭을 통과시켜야 합니다. */
+/* 컨트롤 레이어 자체는 클릭을 통과 */
 .viewer-controls {
-    position: absolute;
-    inset: 0;
-    z-index: 5000;
-/* [핵심] 이 설정이 없으면 투명한 벽이 클릭을 막아 중앙 터치가 안 먹힙니다. */
-    pointer-events: none !important; 
+  position: absolute;
+  inset: 0;
+  z-index: 5000;
+  pointer-events: none !important;
 }
 
-/* 2. 대신 검정 바 내부의 버튼들은 클릭이 되어야 합니다. */
-pointer-events: auto !important; 
-    background: rgba(10, 10, 10, 0.9);
-    transition: transform 0.3s;
+/* 헤더/푸터/버튼 등 실제 UI만 클릭 가능 */
+.viewer-controls .viewer-header,
+.viewer-controls .viewer-footer,
+.viewer-controls button,
+.viewer-controls input,
+.viewer-controls a {
+  pointer-events: auto !important;
 }
 
 /* 3. 사이드 탭이 본문 위에서 확실히 클릭을 가로채게 합니다. */
@@ -953,27 +955,45 @@ foliate-view {
 
 
 @media (max-width: 800px) {
-    .side-tap {
-        width: 35% !important; /* 터치 영역을 35%로 넓혀서 검정 바 호출 방지 */
-        z-index: 100 !important; /* 클릭 우선순위 높임 */
+  .epub-content.paged-view {
+    padding: 10px 20px;
+    column-gap: 20px !important;
+  }
 
-  /* 검정 바(show 클래스)가 뜰 때만 페이지 번호를 보여줌 */
+  /* 터치 영역을 넓힘 */
+  .side-tap {
+    width: 35% !important;
+    z-index: 100 !important;
+  }
+}
+
+/* 검정 바(show 클래스)가 뜰 때만 페이지 번호를 보여줌 */
 .viewer-controls.show ~ .viewer-content .page-counter {
-    opacity: 1;
+  opacity: 1;
 }
 
 /* 최근 본 작품 UI */
 .recent-section {
-    max-width: 1600px; margin: 20px auto; padding: 15px;
-    background: var(--card-bg); border-radius: 12px; border: 1px solid var(--accent);
+  max-width: 1600px;
+  margin: 20px auto;
+  padding: 15px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--accent);
 }
-.recent-list { display: flex; gap: 12px; overflow-x: auto; padding: 5px 0; scrollbar-width: none; }
+.recent-list {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 5px 0;
+  scrollbar-width: none;
+}
 .recent-item {
-    background: #333; padding: 10px 18px; border-radius: 25px;
-    cursor: pointer; white-space: nowrap; font-size: 14px; color: var(--accent);
-}
-
-/* 소설 본문 상하 여백 강제 확보 */
-.inner-content {
-    padding: 100px 10% 100px 10% !important;
+  background: #333;
+  padding: 10px 18px;
+  border-radius: 25px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--accent);
 }
