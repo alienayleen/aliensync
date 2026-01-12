@@ -14,7 +14,6 @@ window.currentEpisodeName = "";
 window.handleViewerClick = function(event) {
     if (event.target.closest('.viewer-controls') || event.target.closest('.btn-icon')) return;
     
-    // 타 스크립트 충돌 방지
     if(event.stopImmediatePropagation) event.stopImmediatePropagation();
 
     var clickX = event.clientX;
@@ -23,20 +22,17 @@ window.handleViewerClick = function(event) {
     var sideZone = screenWidth * 0.2; 
 
     if (clickX < sideZone) {
-        // 왼쪽 20%: 이전
         if (window.navigateViewer) window.navigateViewer(-1);
         if (viewerControls) viewerControls.classList.remove('show');
     } else if (clickX > screenWidth - sideZone) {
-        // 오른쪽 20%: 다음
         if (window.navigateViewer) window.navigateViewer(1);
         if (viewerControls) viewerControls.classList.remove('show');
     } else {
-        // 가운데 60%: 메뉴
         if (viewerControls) viewerControls.classList.toggle('show');
     }
 };
 
-// [2. 그리드 렌더링 - 모든 버튼 복구]
+// [2. 그리드 렌더링 - 버튼 복구 및 문법 오류 방지]
 window.renderGrid = function(seriesList) {
     window.allSeries = seriesList;
     var grid = document.getElementById('grid');
@@ -44,7 +40,7 @@ window.renderGrid = function(seriesList) {
     grid.innerHTML = '';
 
     if (!seriesList || seriesList.length === 0) {
-        grid.innerHTML = '<div class="no-data">작품이 없습니다.</div>';
+        grid.innerHTML = '<div class="no-data">저장된 작품이 없습니다.</div>';
         return;
     }
 
@@ -53,7 +49,7 @@ window.renderGrid = function(seriesList) {
         var category = series.category || meta.category || 'Webtoon';
         var thumb = series.thumbnailId ? "https://googleusercontent.com/profile/picture/0" + series.thumbnailId + "=s400" : NO_IMAGE_SVG;
         var safeTitle = series.name.replace(/'/g, "\\'");
-        var dynamicUrl = window.getDynamicLink(series);
+        var dynamicUrl = window.getDynamicLink ? window.getDynamicLink(series) : "#";
 
         var card = document.createElement('div');
         card.className = 'card';
@@ -108,7 +104,7 @@ window.renderRecentList = async function() {
                 '<div class="recent-ep">' + item.episode + ' (' + item.point + ')</div>';
             grid.appendChild(div);
         });
-    } catch (e) { console.warn("Recent list failed"); }
+    } catch (e) { console.warn("Recent list load failed"); }
 };
 
 window.saveCurrentBookmark = async function() {
@@ -122,18 +118,18 @@ window.saveCurrentBookmark = async function() {
     }
 
     try {
-        showToast("💾 저장 중...");
+        if(window.showToast) window.showToast("💾 저장 중...");
         await API.request('view_save_bookmark', {
             type: "view_save_bookmark",
             seriesId: window.currentSeriesId,
             title: window.currentSeriesTitle,
-            episode: window.currentEpisodeName || "정보 없음",
+            episode: window.currentEpisodeName || "회차 정보 없음",
             point: point,
             folderId: API.folderId
         });
-        showToast("✅ 저장 완료!");
+        if(window.showToast) window.showToast("✅ 저장 완료!");
         window.renderRecentList();
-    } catch (e) { showToast("❌ 저장 실패"); }
+    } catch (e) { if(window.showToast) window.showToast("❌ 저장 실패"); }
 };
 
 window.getDynamicLink = function(series) {
@@ -153,7 +149,7 @@ window.refreshDB = async function(forceId, silent, bypassCache) {
         var response = await API.request('view_get_library', { folderId: forceId || API.folderId, refresh: bypassCache });
         window.renderGrid(Array.isArray(response) ? response : (response.list || []));
         window.renderRecentList();
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("RefreshDB Error:", e); }
     finally { if(loader) loader.style.display = 'none'; }
 };
 
