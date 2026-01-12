@@ -474,30 +474,42 @@ function View_rebuildLibraryIndex(folderId) {
   const folders = root.getFolders();
   const seriesList = [];
   const CATEGORIES = ["Webtoon", "Manga", "Novel"];
+  const EXCLUDE_NAMES = ["library_index.json", "_toki_cache.json"];
 
   while (folders.hasNext()) {
     const folder = folders.next();
     const name = folder.getName();
-    if (name === INDEX_FILE_NAME) continue;
+    
+    // 제외할 파일/폴더 이름 체크
+    if (EXCLUDE_NAMES.includes(name)) continue;
 
     if (CATEGORIES.includes(name)) {
+      // 1. 카테고리 폴더(Webtoon 등)인 경우 안쪽 폴더들을 작품으로 추가
       const sub = folder.getFolders();
       while (sub.hasNext()) {
-         const s = processSeriesFolder(sub.next(), name);
-         if (s) seriesList.push(s);
+        const s = processSeriesFolder(sub.next(), name);
+        if (s) seriesList.push(s);
       }
-    } else if (name.match(/^\[(\d+)\]/)) {
-         const s = processSeriesFolder(folder, "Uncategorized");
-         if (s) seriesList.push(s);
+    } else {
+      // 2. 카테고리 폴더가 아닌 일반 폴더는 그 자체를 작품으로 추가
+      // [ID] 형식이 아니더라도 모두 가져오도록 처리
+      const s = processSeriesFolder(folder, "Uncategorized");
+      if (s) seriesList.push(s);
     }
   }
 
+  // 최신 업데이트 순으로 정렬
   seriesList.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
   
   const jsonString = JSON.stringify(seriesList);
   const indexFiles = root.getFilesByName(INDEX_FILE_NAME);
-  if (indexFiles.hasNext()) indexFiles.next().setContent(jsonString);
-  else root.createFile(INDEX_FILE_NAME, jsonString, MimeType.PLAIN_TEXT);
+  
+  // 기존 인덱스 파일 업데이트 또는 생성
+  if (indexFiles.hasNext()) {
+    indexFiles.next().setContent(jsonString);
+  } else {
+    root.createFile(INDEX_FILE_NAME, jsonString, MimeType.PLAIN_TEXT);
+  }
 
   return seriesList;
 }
