@@ -24,7 +24,6 @@ let allSeries = [];
 // 1. Initialization & Handshake
 // ============================================================
 
-};
 
 const viewerContent = document.getElementById('viewerContent');
 if (viewerContent) {
