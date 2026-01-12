@@ -364,7 +364,21 @@ window.toggleTextScrollMode = function() {
     // 버튼 UI 업데이트용 (버튼에 id="textScrollBtn"이 있다고 가정)
     const btn = document.getElementById('textScrollBtn');
     if (btn) btn.classList.toggle('active', isScroll);
+
+    // 스크롤 모드일 때는 터치 구역 비활성화 처리 (선택사항)
+    const taps = document.querySelectorAll('.side-tap');
+    taps.forEach(t => t.style.display = isScroll ? 'none' : 'block');
+    
+    showToast(isScroll ? "📜 스크롤 보기" : "📖 페이지 보기");
 };
+
+// 사이드 터치 시 UI(검정 바)가 뜨지 않도록 방어
+document.querySelectorAll('.side-tap, .nav-zone').forEach(el => {
+    el.addEventListener('click', (e) => {
+        e.stopPropagation(); // 클릭 이벤트가 부모(UI 토글)로 퍼지는 것을 차단
+    }, true);
+});
+
 
 // ============================================================
 // 5. Settings / Config Logic
