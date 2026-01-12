@@ -1022,17 +1022,7 @@ foliate-view {
   padding: 0 40px; /* 기존 유지 */
   box-sizing: border-box;
 }
-;
-}
 
-/* Foliate/Legacy EPUB 본문 자체에도 여백 */
-#viewerScrollContainer.epub-mode .epub-content,
-#viewerScrollContainer.epub-mode .epub-content.paged-view,
-#viewerScrollContainer.epub-mode .epub-content.scroll-view {
-  padding-top: 70px;
-  padding-bottom: 120px;
-  box-sizing: border-box;
-}
 
 /* “New Text Viewer Layout” (book-container) 쓰는 경우 */
 .book-container .inner-content {
