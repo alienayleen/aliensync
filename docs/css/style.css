@@ -1,66 +1,43 @@
-:root {
-  --bg-color: #1a1a1a; --card-bg: #252525; --accent: #00d084;
-}
+:root { --accent: #00d084; --bg: #1a1a1a; }
+body { background: var(--bg); color: #eee; margin: 0; font-family: sans-serif; }
 
-body { background: var(--bg-color); color: #e0e0e0; font-family: sans-serif; margin: 0; user-select: none; }
+/* [버그 수정: 화면 반갈/2쪽 보기 강제 해제] */
+.viewer-spread { display: flex !important; width: 100vw !important; height: 100vh !important; }
+.viewer-spread > div { width: 100vw !important; flex: 0 0 100vw !important; max-width: 100vw !important; display: flex; justify-content: center; }
+.viewer-page { width: auto !important; max-width: 100% !important; height: auto !important; max-height: 100vh !important; object-fit: contain; }
+.half { width: 100% !important; flex: 0 0 100% !important; }
 
-/* [버그 수정: 화면 반갈 방지] */
-.viewer-spread, .viewer-image-container {
-    display: flex !important;
-    width: 100% !important;
-    height: 100% !important;
-    justify-content: center;
-    align-items: center;
-}
-.viewer-page { 
-    max-width: 100% !important; 
-    height: auto !important; 
-    max-height: 100vh !important;
-}
-.half { width: 100% !important; flex: 0 0 100% !important; } /* 반쪽 모드 강제 해제 */
-
-/* [버그 수정: 소설/텍스트 스크롤 강제 활성화] */
+/* [버그 수정: 소설 스크롤 및 검정 바 여백] */
 #viewerScrollContainer {
     display: block !important;
-    width: 100% !important;
-    height: 100vh !important;
-    overflow-y: scroll !important; /* 무조건 스크롤바 생성 */
-    padding: 80px 20px 150px 20px !important;
-    box-sizing: border-box !important;
+    position: fixed !important; /* 화면에 완전히 고정 */
+    top: 0; left: 0; width: 100%; height: 100vh;
+    overflow-y: scroll !important; /* 강제 세로 스크롤 */
+    padding: 100px 20px 150px 20px !important; /* 상하 여백 충분히 */
     background: #1a1a1a !important;
     z-index: 10 !important;
+    box-sizing: border-box;
 }
 
-/* [버그 수정: 검정 바 메뉴 제어] */
-.viewer-controls {
-    pointer-events: none !important; /* 평소엔 클릭 방해 금지 */
-    position: fixed; inset: 0; z-index: 1000;
-}
+/* [메뉴 제어] */
+.viewer-controls { pointer-events: none !important; z-index: 2000 !important; }
 .viewer-header, .viewer-footer {
-    opacity: 0; visibility: hidden; transition: 0.3s;
-    pointer-events: auto !important;
-    background: rgba(0,0,0,0.9);
+    opacity: 0; visibility: hidden; transition: 0.2s;
+    pointer-events: auto !important; background: rgba(0,0,0,0.9);
 }
 .viewer-controls.show .viewer-header,
-.viewer-controls.show .viewer-footer {
-    opacity: 1; visibility: visible; transform: translateY(0);
-}
-.viewer-header { top: 0; transform: translateY(-100%); }
-.viewer-footer { bottom: 0; transform: translateY(100%); }
+.viewer-controls.show .viewer-footer { opacity: 1; visibility: visible; }
 
-/* [대시보드 UI 복구] */
-.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
-.card { background: var(--card-bg); border-radius: 8px; overflow: hidden; position: relative; display: flex; flex-direction: column; border: 1px solid #333; }
+/* [대시보드 UI] */
+.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; padding: 20px; }
+.card { background: #252525; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #333; }
 .thumb-wrapper { position: relative; padding-top: 140%; background: #222; }
 .thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; opacity: 0; transition: 0.2s; }
+.overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; opacity: 0; transition: 0.2s; }
 .card:hover .overlay { opacity: 1; }
+.btn { width: 80%; padding: 8px; border-radius: 4px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; color: black; background: white; }
+.btn-site { background: var(--accent) !important; }
 .info { padding: 12px; }
-.badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #444; margin-right: 4px; }
+.title { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
+.badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #444; color: #eee; margin-right: 4px; }
 .badge.Novel { color: #ffd700; }
-.badge.Webtoon { color: #00d084; }
-.btn { width: 80%; padding: 8px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 12px; }
-
-/* [클릭 영역 시각화용 (필요시)] */
-.nav-zone { position: absolute; top: 0; height: 100%; width: 20%; z-index: 50; }
-.nav-prev { left: 0; } .nav-next { right: 0; }
