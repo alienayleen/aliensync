@@ -463,6 +463,41 @@ function toggleSettings() {
     el.style.display = el.style.display === 'block' ? 'none' : 'block';
 }
 
+// [수정] main.js 초기화 블록
+window.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. 사이드 클릭 시 검정 바(UI) 호출 차단 로직 (최상단에 배치)
+    document.addEventListener('click', function(e) {
+        const xPercent = (e.clientX / window.innerWidth) * 100;
+        
+        // 화면의 좌우 35% 영역을 누를 때
+        if (xPercent < 35 || xPercent > 65) {
+            // 이 구역에서는 페이지 이동만 발생하고, 배경의 '메뉴 토글'은 무시하도록 차단
+            e.stopPropagation(); 
+        }
+    }, true); // 'true' 옵션(Capturing)을 주어 이벤트를 가장 먼저 낚아챕니다.
+
+    // 2. 기존 로직 (handshake 등)
+    window.addEventListener("message", handleMessage, false);
+    
+    const el = document.getElementById('viewerVersionDisplay');
+    if(el) el.innerText = `Viewer Version: ${VIEWER_VERSION}`;
+    
+    if (API.isConfigured()) {
+        refreshDB(null, true);
+        loadDomains();
+    } else {
+        setTimeout(() => {
+            if (!API.isConfigured()) {
+                document.getElementById('configModal').style.display = 'flex';
+            } else {
+                 refreshDB(null, true);
+            }
+            loadDomains();
+        }, 1000);
+    }
+});
+
 // 🚀 Expose Globals for HTML onclick & Modules
 window.refreshDB = refreshDB;
 window.toggleSettings = toggleSettings;
@@ -472,3 +507,4 @@ window.saveActiveSettings = saveActiveSettings;
 window.saveManualConfig = saveManualConfig;
 window.showToast = showToast; // Used by viewer?
 window.renderGrid = renderGrid; // Debugging
+
