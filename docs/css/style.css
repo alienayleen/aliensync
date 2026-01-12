@@ -941,7 +941,7 @@ foliate-view {
 }
 
 /* Touch Zones */
-.side-tap {
+.text-side-tap {
     position: absolute;
     top: 0;
     height: 100%;
@@ -950,8 +950,8 @@ foliate-view {
     z-index: 5;
     /* background: rgba(255,0,0,0.1); Debug */ 
 }
-.left-tap { left: 0; }
-.right-tap { right: 0; }
+.text-left-tap { left: 0; }
+.text-right-tap { right: 0; }
 
 
 @media (max-width: 800px) {
@@ -1002,11 +1002,27 @@ foliate-view {
    Text Viewer (Novel/EPUB) top spacing ONLY
    ================================ */
 
-/* EPUB 컨테이너가 상단에 딱 붙는 문제 완화 */
+/* EPUB 컨테이너가 상단에 딱 붙는 문제 완화 (공통) */
 #viewerScrollContainer.epub-mode {
   padding-top: 70px;
   padding-bottom: 120px;
   box-sizing: border-box;
+}
+
+/* 스크롤 모드에서만 본문 padding 추가 */
+#viewerScrollContainer.epub-mode .epub-content.scroll-view,
+#viewerScrollContainer.epub-mode.scroll-mode .epub-content {
+  padding-top: 70px;
+  padding-bottom: 120px;
+  box-sizing: border-box;
+}
+
+/* paged-view는 기존 레이아웃 계산을 존중: padding은 좌우만 */
+#viewerScrollContainer.epub-mode .epub-content.paged-view {
+  padding: 0 40px; /* 기존 유지 */
+  box-sizing: border-box;
+}
+;
 }
 
 /* Foliate/Legacy EPUB 본문 자체에도 여백 */
