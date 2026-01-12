@@ -1088,3 +1088,21 @@ foliate-view {
     align-items: stretch;
   }
 }
+
+/* ===== Mobile: EPUB paged-view alignment fix ===== */
+@media (max-width: 800px) {
+  #viewerScrollContainer.epub-mode {
+    width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  /* paged-view는 모바일에서 폭을 꽉 채우게 */
+  #viewerScrollContainer.epub-mode .epub-content.paged-view {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 18px !important;   /* 좌우 여백만 최소 */
+    box-sizing: border-box !important;
+  }
+}
