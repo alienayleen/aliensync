@@ -54,3 +54,10 @@ window.onSliderChange = onSliderChange;
 // Initialize Key Controls
 initKeyControls(); // Start listening
 console.log("🚀 Viewer Modules Loaded & Initialized");
+
+
+// 이 줄이 있어야 main.js나 HTML 버튼에서 목록열기 기능을 사용할 수 있습니다.
+window.openEpisodeList = openEpisodeList; 
+window.navigateViewer = navigateViewer;
+window.closeViewer = closeViewer;
+window.toggleScrollMode = toggleScrollMode; // 필요한 경우 추가
