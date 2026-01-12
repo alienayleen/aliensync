@@ -115,4 +115,59 @@ window.renderRecentList = async function() {
 window.saveCurrentBookmark = async function() {
     if (!window.currentSeriesId) return;
     const scrollContainer = document.getElementById('viewerScrollContainer');
-    let point = document.getElementById
+    let point = document.getElementById('sliderCurrent').innerText + "P";
+    
+    if (scrollContainer && scrollContainer.style.display === 'block') {
+        const pct = Math.round((scrollContainer.scrollTop / (scrollContainer.scrollHeight - scrollContainer.clientHeight)) * 100);
+        point = pct + "%";
+    }
+
+    try {
+        showToast("💾 저장 중...");
+        await API.request('view_save_bookmark', {
+            type: "view_save_bookmark",
+            seriesId: window.currentSeriesId,
+            title: window.currentSeriesTitle,
+            episode: window.currentEpisodeName || "정보 없음",
+            point: point,
+            folderId: API.folderId
+        });
+        showToast("✅ 저장 완료!");
+        window.renderRecentList();
+    } catch (e) { showToast("❌ 저장 실패"); }
+};
+
+function getDynamicLink(series) {
+    const saved = JSON.parse(localStorage.getItem('toki_domains')) || DEFAULT_DOMAINS;
+    let cat = series.category || (series.metadata ? series.metadata.category : 'Webtoon');
+    let domain = cat === "Novel" ? "booktoki" + saved.booktoki + ".com/novel/" : (cat === "Manga" ? "manatoki" + saved.manatoki + ".net/comic/" : "newtoki" + saved.newtoki + ".com/webtoon/");
+    return "https://" + domain + series.sourceId;
+}
+
+window.refreshDB = async function(forceId = null, silent = false, bypassCache = false) {
+    const loader = document.getElementById('pageLoader');
+    if (!silent && loader) loader.style.display = 'flex';
+    try {
+        const response = await API.request('view_get_library', { folderId: forceId || API.folderId, refresh: bypassCache });
+        window.renderGrid(Array.isArray(response) ? response : (response.list || []));
+        window.renderRecentList();
+    } catch (e) { console.error(e); }
+    finally { if(loader) loader.style.display = 'none'; }
+};
+
+// 유틸리티
+window.changeFontSize = (d) => {
+    const c = document.getElementById('viewerScrollContainer');
+    if(c) c.style.fontSize = (parseInt(window.getComputedStyle(c).fontSize) + d) + "px";
+};
+window.changeLineHeight = (d) => {
+    const c = document.getElementById('viewerScrollContainer');
+    if(c) {
+        let cur = parseFloat(window.getComputedStyle(c).lineHeight) / parseInt(window.getComputedStyle(c).fontSize) || 1.6;
+        c.style.lineHeight = (cur + d);
+    }
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+    if (typeof API !== 'undefined' && API.isConfigured()) window.refreshDB();
+});
