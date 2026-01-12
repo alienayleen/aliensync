@@ -281,6 +281,88 @@ function saveManualConfig() {
     refreshDB();
 }
 
+function handleViewerClick(event) {
+    // 1. 버튼이나 설정창 등 UI 요소를 직접 클릭한 경우는 로직 중단
+    if (event.target.closest('.viewer-controls') || event.target.closest('.btn-icon')) {
+        return;
+    }
+
+    const clickX = event.clientX; // 클릭한 가로 좌표
+    const screenWidth = window.innerWidth;
+    const viewerControls = document.getElementById('viewerControls');
+
+    // 영역 정의 (왼쪽 30%, 오른쪽 30%, 나머지 가운데)
+    const sideZoneWidth = screenWidth * 0.3; 
+
+    if (clickX < sideZoneWidth) {
+        // [왼쪽 30% 영역] 이전 페이지로 이동만 함
+        navigateViewer(-1);
+    } 
+    else if (clickX > screenWidth - sideZoneWidth) {
+        // [오른쪽 30% 영역] 다음 페이지로 이동만 함
+        navigateViewer(1);
+    } 
+    else {
+        // [가운데 영역] 메뉴(검정 바) 토글
+        viewerControls.classList.toggle('active'); // 'active' 클래스로 제어 권장
+        
+        // 만약 메뉴가 켜져 있다면, 3초 뒤에 자동으로 사라지게 하고 싶다면 아래 추가
+        /*
+        if (viewerControls.classList.contains('active')) {
+            clearTimeout(window.menuTimer);
+            window.menuTimer = setTimeout(() => {
+                viewerControls.classList.remove('active');
+            }, 3000);
+        }
+        */
+    }
+}
+
+/* 1. 메뉴 제어: 평소에는 숨김, active 클래스 있을 때만 표시 */
+.viewer-controls {
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    opacity: 0; /* 평소엔 투명하게 */
+    pointer-events: none; /* 투명할 땐 클릭 안 되게 */
+    transition: opacity 0.2s ease-in-out;
+    background: rgba(0, 0, 0, 0.85); /* 약간 투명한 검정 */
+}
+
+.viewer-controls.active {
+    opacity: 1;
+    pointer-events: auto; /* 보일 때만 클릭 가능 */
+}
+
+/* 2. 스크롤 뷰어 강제 활성화 */
+.viewer-scroll-container {
+    display: block; /* 혹은 flex */
+    width: 100%;
+    height: 100vh;
+    overflow-y: scroll !important; /* 항상 스크롤바 허용 */
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 60px 0; /* 상하 검정 바 영역만큼 여백을 줘서 글자 안 가리게 함 */
+}
+
+.viewer-scroll-container img {
+    width: 100%;
+    max-width: 800px; /* 가독성을 위한 최대폭 (선택사항) */
+    margin: 0 auto;
+    display: block;
+}
+
+/* 3. 소설(EPUB/텍스트) 글자 크기 조절을 위한 기본 클래스 */
+.viewer-scroll-container {
+    font-size: 18px; /* 기본 크기 */
+    line-height: 1.8;
+    color: #ccc;
+    word-break: break-all;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
 /**
  * 검색창 입력 이벤트 핸들러.
  * `allSeries`에서 제목을 검색하여 그리드를 필터링합니다.
