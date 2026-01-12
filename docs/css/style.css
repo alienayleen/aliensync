@@ -10,6 +10,37 @@
   --input-bg: #333;
 }
 
+/* =========================================
+   Text Viewer (Novel/EPUB) - Responsive sizing
+   - Prevent half-cut view on mobile
+   - Does not affect Webtoon image viewer
+   ========================================= */
+
+/* Constrain paper size to viewport on small screens */
+:root {
+  --view-width: min(700px, 92vw);
+  --view-height: min(850px, 92vh);
+}
+
+@media (max-width: 800px) {
+  :root {
+    --view-width: 100vw;
+    --view-height: 100vh;
+  }
+
+  .book-container {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .book-container .inner-content {
+    padding-left: 7vw;
+    padding-right: 7vw;
+  }
+}
+
 body {
   background-color: var(--bg-color);
   color: var(--text-primary);
