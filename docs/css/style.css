@@ -1090,3 +1090,29 @@ foliate-view {
   z-index: 3000 !important;
 }
 
+
+
+
+/* =========================
+   [Responsive Override - MUST be last]
+   Fix mobile/right-shift/half-cut issues caused by the later :root override.
+   ========================= */
+:root {
+  --view-width: min(700px, 92vw);
+  --view-height: min(850px, 92vh);
+}
+
+/* Ensure the text viewer frame can never overflow viewport width */
+.book-container {
+  width: var(--view-width);
+  height: var(--view-height);
+  max-width: 100vw;
+  max-height: 100vh;
+  margin: 0 auto;
+}
+
+/* In very narrow screens, remove any accidental horizontal offset */
+.viewer-content, .viewer-page-wrapper.text-mode {
+  justify-content: center !important;
+  align-items: center !important;
+}
