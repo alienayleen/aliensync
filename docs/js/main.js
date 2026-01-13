@@ -253,6 +253,20 @@ function saveManualConfig() {
     refreshDB();
 }
 
+function updateConfigModalInfo() {
+    const hostEl = document.getElementById('configHost');
+    if (hostEl) hostEl.innerText = window.location.origin || window.location.href;
+
+    const apiHint = document.getElementById('configApiHint');
+    if (apiHint) apiHint.innerText = API.baseUrl || '미설정';
+
+    const apiInput = document.getElementById('configApiUrl');
+    if (apiInput && API.baseUrl) apiInput.value = API.baseUrl;
+
+    const folderInput = document.getElementById('configFolderId');
+    if (folderInput && API.folderId) folderInput.value = API.folderId;
+}
+
 /**
  * 검색창 입력 이벤트 핸들러.
  * `allSeries`에서 제목을 검색하여 그리드를 필터링합니다.
@@ -682,7 +696,10 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       if (!API.isConfigured()) {
         const cm = document.getElementById('configModal');
-        if (cm) cm.style.display = 'flex';
+        if (cm) {
+            updateConfigModalInfo();
+            cm.style.display = 'flex';
+        }
       } else {
         refreshDB(null, true);
       }
