@@ -446,7 +446,16 @@ function getDynamicLink(series) {
  */
 function toggleSettings() {
     const el = document.getElementById('domainPanel');
-    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    if (el) {
+        el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+        return;
+    }
+
+    const cm = document.getElementById('configModal');
+    if (cm) {
+        updateConfigModalInfo();
+        cm.style.display = 'flex';
+    }
 }
 
 // ============================================================
