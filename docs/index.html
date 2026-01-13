@@ -23,8 +23,17 @@
     </div>
     
     <div id="recentSection" class="recent-section">
-        <div style="font-size: 14px; font-weight: bold; color: var(--accent); margin-bottom: 8px;">📍 최근 읽은 작품</div>
+        <div class="recent-header">
+            <div class="recent-title">📍 최근/북마크</div>
+            <div class="recent-tabs">
+                <button id="recentTabBtn" class="recent-tab active" onclick="switchRecentTab('recent')">최근</button>
+                <button id="bookmarkTabBtn" class="recent-tab" onclick="switchRecentTab('bookmark')">북마크</button>
+            </div>
+        </div>
         <div id="recentList" class="recent-list">
+            <div style="color:#666; font-size:12px;">불러오는 중...</div>
+        </div>
+        <div id="bookmarkList" class="recent-list" style="display:none;">
             <div style="color:#666; font-size:12px;">불러오는 중...</div>
         </div>
     </div>
@@ -90,6 +99,7 @@
                 <button class="btn-toggle" onclick="changeFontSize(-2)">가-</button>
                 <button class="btn-toggle" onclick="changeFontSize(2)">가+</button>
                 <button id="btnScroll" class="btn-toggle" onclick="toggleScrollMode()">스크롤</button>
+                <button class="btn-toggle" onclick="saveCurrentBookmark()">북마크</button>
             </div>
         </div>
     </div>

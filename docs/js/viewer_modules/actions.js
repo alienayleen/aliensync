@@ -5,7 +5,7 @@ import { updateNavHandlers, updateButtonStates, closeViewer, loadViewerSettings 
 import { renderEpisodeList } from './episode.js';
 import { showToast, getProgress, formatSize } from './utils.js';
 
-export async function openEpisodeList(seriesId, title, seriesIndex) {
+export async function openEpisodeList(seriesId, title, seriesIndex, openBookId = null, seriesCategory = null) {
     document.getElementById('episodeModal').style.display = 'flex';
     document.querySelector('#episodeModal .modal-title').innerText = `📄 ${title}`;
     const listEl = document.getElementById('episodeList');
@@ -14,7 +14,11 @@ export async function openEpisodeList(seriesId, title, seriesIndex) {
     try {
         const books = await API.request('view_get_books', { seriesId: seriesId });
         document.querySelector('#episodeModal .modal-title').innerText = `📄 ${title} (${books ? books.length : 0}개)`;
-        renderEpisodeList(books, seriesId);
+        renderEpisodeList(books, seriesId, title, seriesCategory);
+        if (openBookId && Array.isArray(books)) {
+            const idx = books.findIndex(book => book.id === openBookId);
+            if (idx >= 0) loadViewer(idx);
+        }
     } catch (e) {
         listEl.innerHTML = `<div style="padding:20px; color:red;">오류: ${e.message}</div>`;
     }
@@ -190,6 +194,7 @@ export function preloadNextEpisode() {
 export function openEpisodeListFromViewer() {
     const book = currentBookList[currentBookIndex];
     if(book) {
-        openEpisodeList(book.seriesId, document.querySelector('.modal-title').innerText.replace('📄 ','').split('(')[0].trim());
+        const title = book.seriesName || document.querySelector('.modal-title').innerText.replace('📄 ','').split('(')[0].trim();
+        openEpisodeList(book.seriesId, title, 0, null, book.category);
     }
 }

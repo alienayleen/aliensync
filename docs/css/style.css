@@ -1034,6 +1034,35 @@ foliate-view {
   border-radius: 12px;
   border: 1px solid var(--accent);
 }
+.recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.recent-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--accent);
+}
+.recent-tabs {
+  display: flex;
+  gap: 6px;
+}
+.recent-tab {
+  border: 1px solid #444;
+  background: #222;
+  color: #ccc;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.recent-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .recent-list {
   display: flex;
   gap: 12px;

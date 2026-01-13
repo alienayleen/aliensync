@@ -477,7 +477,54 @@ function View_Dispatcher(data) {
 /* FILE: View_Services.gs (Combined) */
 /* ========================================================================== */
 
+const HISTORY_FILE_NAME = "toki_history.json";
 const INDEX_FILE_NAME = "library_index.json";
+
+function View_saveBookmark(data, rootFolderId) {
+  const root = DriveApp.getFolderById(rootFolderId);
+  let file;
+  const files = root.getFilesByName(HISTORY_FILE_NAME);
+
+  if (files.hasNext()) {
+    file = files.next();
+  } else {
+    file = root.createFile(HISTORY_FILE_NAME, "{}", MimeType.PLAIN_TEXT);
+  }
+
+  let history = {};
+  try {
+    const content = file.getBlob().getDataAsString();
+    history = JSON.parse(content || "{}");
+  } catch (e) {
+    history = {};
+  }
+
+  history[data.seriesId] = {
+    seriesId: data.seriesId,
+    name: data.name || "Unknown",
+    epId: data.epId,
+    page: data.page || 0,
+    time: new Date().getTime(),
+  };
+
+  file.setContent(JSON.stringify(history));
+  return history;
+}
+
+function View_getRecentBookmarks(rootFolderId) {
+  const root = DriveApp.getFolderById(rootFolderId);
+  const files = root.getFilesByName(HISTORY_FILE_NAME);
+
+  if (files.hasNext()) {
+    try {
+      const content = files.next().getBlob().getDataAsString();
+      return JSON.parse(content);
+    } catch (e) {
+      return {};
+    }
+  }
+  return {};
+}
 
 function View_getSeriesList(folderId) {
   const root = DriveApp.getFolderById(folderId);

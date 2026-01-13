@@ -3,7 +3,7 @@
  * Exposes all necessary functions to global window object
  */
 
-import { vState } from './state.js';
+import { vState, currentBookList, currentBookIndex } from './state.js';
 import { 
     openEpisodeList, 
     loadViewer, 
@@ -50,6 +50,26 @@ window.toggleControls = toggleControls;
 window.handleViewerClick = handleViewerClick;
 window.onSliderInput = onSliderInput;
 window.onSliderChange = onSliderChange;
+
+window.saveCurrentBookmark = function() {
+    const book = currentBookList[currentBookIndex];
+    if (!book) {
+        if (window.showToast) window.showToast("북마크할 작품이 없습니다.");
+        return;
+    }
+
+    if (typeof window.saveBookmarkRecord === 'function') {
+        window.saveBookmarkRecord(
+            book.seriesId,
+            book.seriesName || book.seriesId,
+            book.id,
+            book.name,
+            book.category
+        );
+    } else if (window.showToast) {
+        window.showToast("북마크 기능이 준비되지 않았습니다.");
+    }
+};
 
 // Initialize Key Controls
 initKeyControls(); // Start listening
