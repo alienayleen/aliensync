@@ -660,6 +660,8 @@ function normalizeSinglePageSpread() {
   }
 }
 
+window.normalizeSinglePageSpread = normalizeSinglePageSpread;
+
 
 // [수정] main.js 초기화 블록
 window.addEventListener('DOMContentLoaded', () => {
@@ -729,8 +731,11 @@ async function loadHistory() {
  * ============================ */
 (function () {
   const STATE = {
-    fontPx: parseInt(localStorage.getItem("toki_font_px") || "18", 10),
+    fontPx: parseInt(localStorage.getItem("toki_v_fontsize") || localStorage.getItem("toki_font_px") || "18", 10),
   };
+
+  const FONT_STORAGE_KEY = "toki_v_fontsize";
+  const LEGACY_FONT_STORAGE_KEY = "toki_font_px";
 
   function qs(id) { return document.getElementById(id); }
 
@@ -847,18 +852,26 @@ async function loadHistory() {
 
   function applyFontPx(px) {
     STATE.fontPx = Math.max(12, Math.min(40, px));
-    localStorage.setItem("toki_font_px", String(STATE.fontPx));
+    localStorage.setItem(FONT_STORAGE_KEY, String(STATE.fontPx));
+    localStorage.setItem(LEGACY_FONT_STORAGE_KEY, String(STATE.fontPx));
 
     const scrollEl = getScrollEl();
-    if (!scrollEl) return;
+    const textContainer = document.querySelector(".book-container .inner-content");
 
-    // Foliate/Legacy EPUB 공통: epub-content 전체에 폰트 사이즈 적용
-    const targets = scrollEl.querySelectorAll(".epub-content, .epub-content *");
-    targets.forEach(el => {
-      // 너무 과격하면 .epub-content에만 적용하도록 바꿔도 됨
-      el.style.fontSize = STATE.fontPx + "px";
-      el.style.lineHeight = "1.8";
-    });
+    if (scrollEl) {
+      // Foliate/Legacy EPUB 공통: epub-content 전체에 폰트 사이즈 적용
+      const targets = scrollEl.querySelectorAll(".epub-content, .epub-content *");
+      targets.forEach(el => {
+        // 너무 과격하면 .epub-content에만 적용하도록 바꿔도 됨
+        el.style.fontSize = STATE.fontPx + "px";
+        el.style.lineHeight = "1.8";
+      });
+    }
+
+    if (textContainer) {
+      textContainer.style.fontSize = STATE.fontPx + "px";
+      textContainer.style.lineHeight = "1.8";
+    }
   }
 
   function wireFontButtons() {
@@ -871,10 +884,26 @@ async function loadHistory() {
     btns.forEach(b => {
       const txt = (b.innerText || "").trim();
       if (txt === "가-") {
-        b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); applyFontPx(STATE.fontPx - 2); };
+        b.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof window.changeFontSize === "function") {
+            window.changeFontSize(-2);
+          } else {
+            applyFontPx(STATE.fontPx - 2);
+          }
+        };
       }
       if (txt === "가+") {
-        b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); applyFontPx(STATE.fontPx + 2); };
+        b.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof window.changeFontSize === "function") {
+            window.changeFontSize(2);
+          } else {
+            applyFontPx(STATE.fontPx + 2);
+          }
+        };
       }
     });
   }
