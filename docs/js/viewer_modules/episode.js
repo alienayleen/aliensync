@@ -18,7 +18,7 @@ export function renderEpisodeList(books, seriesId) {
     }
 
     books.forEach((book, index) => {
-        book.seriesId = seriesId; 
+        book.seriesId = seriesId;
         const div = document.createElement('div');
         div.className = 'episode-item';
 

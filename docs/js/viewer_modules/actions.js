@@ -32,6 +32,16 @@ export async function loadViewer(index, isContinuous = false) {
     updateCurrentBookIndex(index);
     loadViewerSettings();
 
+    const isNarrowViewport = () =>
+        typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(max-width: 820px)').matches;
+
+    if (isNarrowViewport()) {
+        vState.scrollMode = true;
+        localStorage.setItem('toki_v_scroll', 'true');
+    }
+
     const viewer = document.getElementById('viewerOverlay');
     const content = document.getElementById('viewerContent');
     const container = document.getElementById('viewerImageContainer');
@@ -190,6 +200,7 @@ export function preloadNextEpisode() {
 export function openEpisodeListFromViewer() {
     const book = currentBookList[currentBookIndex];
     if(book) {
-        openEpisodeList(book.seriesId, document.querySelector('.modal-title').innerText.replace('📄 ','').split('(')[0].trim());
+        const title = document.querySelector('.modal-title').innerText.replace('📄 ','').split('(')[0].trim();
+        openEpisodeList(book.seriesId, title, 0);
     }
 }

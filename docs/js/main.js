@@ -191,7 +191,7 @@ function renderGrid(seriesList) {
                     <a href="https://drive.google.com/drive/u/0/folders/${series.id}" target="_blank" class="btn btn-drive">📂 드라이브</a>
 
                     <button
-                        onclick="try{ saveReadHistory('${series.id}', '${safeName}'); }catch(e){}; openEpisodeList('${series.id}', '${safeName}', ${index});"
+                        onclick="openEpisodeList('${series.id}', '${safeName}', ${index});"
                         class="btn"
                         style="background:#444; color:white;"
                     >📄 목록</button>
@@ -251,6 +251,20 @@ function saveManualConfig() {
     API.setConfig(url, id);
     document.getElementById('configModal').style.display = 'none';
     refreshDB();
+}
+
+function updateConfigModalInfo() {
+    const hostEl = document.getElementById('configHost');
+    if (hostEl) hostEl.innerText = window.location.origin || window.location.href;
+
+    const apiHint = document.getElementById('configApiHint');
+    if (apiHint) apiHint.innerText = API.baseUrl || '미설정';
+
+    const apiInput = document.getElementById('configApiUrl');
+    if (apiInput && API.baseUrl) apiInput.value = API.baseUrl;
+
+    const folderInput = document.getElementById('configFolderId');
+    if (folderInput && API.folderId) folderInput.value = API.folderId;
 }
 
 /**
@@ -432,7 +446,16 @@ function getDynamicLink(series) {
  */
 function toggleSettings() {
     const el = document.getElementById('domainPanel');
-    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    if (el) {
+        el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+        return;
+    }
+
+    const cm = document.getElementById('configModal');
+    if (cm) {
+        updateConfigModalInfo();
+        cm.style.display = 'flex';
+    }
 }
 
 // ============================================================
@@ -660,6 +683,8 @@ function normalizeSinglePageSpread() {
   }
 }
 
+window.normalizeSinglePageSpread = normalizeSinglePageSpread;
+
 
 // [수정] main.js 초기화 블록
 window.addEventListener('DOMContentLoaded', () => {
@@ -680,13 +705,17 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       if (!API.isConfigured()) {
         const cm = document.getElementById('configModal');
-        if (cm) cm.style.display = 'flex';
+        if (cm) {
+            updateConfigModalInfo();
+            cm.style.display = 'flex';
+        }
       } else {
         refreshDB(null, true);
       }
       loadDomains();
     }, 1000);
   }
+
 });
 // 🚀 Expose Globals for HTML onclick & Modules
 window.refreshDB = refreshDB;
@@ -698,39 +727,17 @@ window.saveManualConfig = saveManualConfig;
 window.showToast = showToast; // Used by viewer?
 window.renderGrid = renderGrid; // Debugging
 
-window.saveReadHistory = async function(seriesId, seriesName) {
-    try {
-        await API.request('view_save_bookmark', {
-            folderId: API.folderId, seriesId: seriesId, name: seriesName, time: new Date().getTime()
-        });
-        loadHistory();
-    } catch (e) { console.log("기록 저장 실패"); }
-};
-
-async function loadHistory() {
-    const container = document.getElementById('recentList');
-    if (!container) return;
-    try {
-        const res = await API.request('view_get_bookmarks', { folderId: API.folderId });
-        if (!res) return;
-        container.innerHTML = '';
-        Object.values(res).sort((a,b) => b.time - a.time).slice(0, 6).forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'recent-item';
-            div.innerText = `📖 ${item.name}`;
-            div.onclick = () => openEpisodeList(item.seriesId, item.name, 0);
-            container.appendChild(div);
-        });
-    } catch (e) { console.log("기록 로드 실패"); }
-
 
     /* ============================
  * Paged(좌우 넘김) 모드: 탭 내비 + 중앙 토글 + 리사이즈 스냅 + 폰트 버튼 복구
  * ============================ */
 (function () {
   const STATE = {
-    fontPx: parseInt(localStorage.getItem("toki_font_px") || "18", 10),
+    fontPx: parseInt(localStorage.getItem("toki_v_fontsize") || localStorage.getItem("toki_font_px") || "18", 10),
   };
+
+  const FONT_STORAGE_KEY = "toki_v_fontsize";
+  const LEGACY_FONT_STORAGE_KEY = "toki_font_px";
 
   function qs(id) { return document.getElementById(id); }
 
@@ -847,18 +854,26 @@ async function loadHistory() {
 
   function applyFontPx(px) {
     STATE.fontPx = Math.max(12, Math.min(40, px));
-    localStorage.setItem("toki_font_px", String(STATE.fontPx));
+    localStorage.setItem(FONT_STORAGE_KEY, String(STATE.fontPx));
+    localStorage.setItem(LEGACY_FONT_STORAGE_KEY, String(STATE.fontPx));
 
     const scrollEl = getScrollEl();
-    if (!scrollEl) return;
+    const textContainer = document.querySelector(".book-container .inner-content");
 
-    // Foliate/Legacy EPUB 공통: epub-content 전체에 폰트 사이즈 적용
-    const targets = scrollEl.querySelectorAll(".epub-content, .epub-content *");
-    targets.forEach(el => {
-      // 너무 과격하면 .epub-content에만 적용하도록 바꿔도 됨
-      el.style.fontSize = STATE.fontPx + "px";
-      el.style.lineHeight = "1.8";
-    });
+    if (scrollEl) {
+      // Foliate/Legacy EPUB 공통: epub-content 전체에 폰트 사이즈 적용
+      const targets = scrollEl.querySelectorAll(".epub-content, .epub-content *");
+      targets.forEach(el => {
+        // 너무 과격하면 .epub-content에만 적용하도록 바꿔도 됨
+        el.style.fontSize = STATE.fontPx + "px";
+        el.style.lineHeight = "1.8";
+      });
+    }
+
+    if (textContainer) {
+      textContainer.style.fontSize = STATE.fontPx + "px";
+      textContainer.style.lineHeight = "1.8";
+    }
   }
 
   function wireFontButtons() {
@@ -871,10 +886,26 @@ async function loadHistory() {
     btns.forEach(b => {
       const txt = (b.innerText || "").trim();
       if (txt === "가-") {
-        b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); applyFontPx(STATE.fontPx - 2); };
+        b.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof window.changeFontSize === "function") {
+            window.changeFontSize(-2);
+          } else {
+            applyFontPx(STATE.fontPx - 2);
+          }
+        };
       }
       if (txt === "가+") {
-        b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); applyFontPx(STATE.fontPx + 2); };
+        b.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof window.changeFontSize === "function") {
+            window.changeFontSize(2);
+          } else {
+            applyFontPx(STATE.fontPx + 2);
+          }
+        };
       }
     });
   }

@@ -429,23 +429,45 @@ function uploadChunk(data) {
 /* FILE: View_Dispatcher.gs */
 /* ========================================================================== */
 
+function View_requireHandler(handlerName, hint) {
+  if (typeof this[handlerName] !== "function") {
+    const message =
+      "Missing handler: " +
+      handlerName +
+      (hint ? " (" + hint + ")" : "");
+    throw new Error(message);
+  }
+}
+
 function View_Dispatcher(data) {
   try {
     const action = data.type;
     const folderId = data.folderId;
     let resultBody = null;
 
-    if (action === "view_get_library") {
-      resultBody = View_getSeriesList(data.folderId);
-    } else if (action === "view_get_books" || action === "view_refresh_cache") {
-      const bypassCache = data.bypassCache === true || action === "view_refresh_cache";
-      resultBody = View_getBooks(data.seriesId, bypassCache);
-    } else if (action === "view_get_chunk") {
-      resultBody = View_getFileChunk(data.fileId, data.offset || 0, data.length || 10485760);
-    } else {
-      throw new Error("Unknown Viewer Action: " + action);
-    }
-    return createRes("success", resultBody);
+  if (action === "view_get_library") {
+    View_requireHandler(
+      "View_getSeriesList",
+      "include View_LibraryService.gs in your deployment"
+    );
+    resultBody = View_getSeriesList(data.folderId);
+  } else if (action === "view_get_books" || action === "view_refresh_cache") {
+    const bypassCache = data.bypassCache === true || action === "view_refresh_cache";
+    View_requireHandler(
+      "View_getBooks",
+      "include View_BookService.gs in your deployment"
+    );
+    resultBody = View_getBooks(data.seriesId, bypassCache);
+  } else if (action === "view_get_chunk") {
+    View_requireHandler(
+      "View_getFileChunk",
+      "include View_FileService.gs in your deployment"
+    );
+    resultBody = View_getFileChunk(data.fileId, data.offset || 0, data.length || 10485760);
+  } else {
+    throw new Error("Unknown Viewer Action: " + action);
+  }
+  return createRes("success", resultBody);
   } catch (e) {
     return createRes("error", e.toString());
   }
