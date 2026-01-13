@@ -131,6 +131,7 @@ async function refreshDB(forceId = null, silent = false, bypassCache = false) {
         }
 
         renderGrid(allSeries);
+        loadBookmarkData();
         showToast("📚 라이브러리 업데이트 완료");
 
     } catch (e) {
@@ -191,7 +192,7 @@ function renderGrid(seriesList) {
                     <a href="https://drive.google.com/drive/u/0/folders/${series.id}" target="_blank" class="btn btn-drive">📂 드라이브</a>
 
                     <button
-                        onclick="try{ saveReadHistory('${series.id}', '${safeName}'); }catch(e){}; openEpisodeList('${series.id}', '${safeName}', ${index});"
+                        onclick="try{ saveBookmarkRecord('${series.id}', '${safeName}', null, null, '${category}'); }catch(e){}; openEpisodeList('${series.id}', '${safeName}', ${index}, null, '${category}');"
                         class="btn"
                         style="background:#444; color:white;"
                     >📄 목록</button>
@@ -251,6 +252,20 @@ function saveManualConfig() {
     API.setConfig(url, id);
     document.getElementById('configModal').style.display = 'none';
     refreshDB();
+}
+
+function updateConfigModalInfo() {
+    const hostEl = document.getElementById('configHost');
+    if (hostEl) hostEl.innerText = window.location.origin || window.location.href;
+
+    const apiHint = document.getElementById('configApiHint');
+    if (apiHint) apiHint.innerText = API.baseUrl || '미설정';
+
+    const apiInput = document.getElementById('configApiUrl');
+    if (apiInput && API.baseUrl) apiInput.value = API.baseUrl;
+
+    const folderInput = document.getElementById('configFolderId');
+    if (folderInput && API.folderId) folderInput.value = API.folderId;
 }
 
 /**
@@ -432,7 +447,16 @@ function getDynamicLink(series) {
  */
 function toggleSettings() {
     const el = document.getElementById('domainPanel');
-    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    if (el) {
+        el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+        return;
+    }
+
+    const cm = document.getElementById('configModal');
+    if (cm) {
+        updateConfigModalInfo();
+        cm.style.display = 'flex';
+    }
 }
 
 // ============================================================
@@ -660,6 +684,8 @@ function normalizeSinglePageSpread() {
   }
 }
 
+window.normalizeSinglePageSpread = normalizeSinglePageSpread;
+
 
 // [수정] main.js 초기화 블록
 window.addEventListener('DOMContentLoaded', () => {
@@ -680,13 +706,18 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       if (!API.isConfigured()) {
         const cm = document.getElementById('configModal');
-        if (cm) cm.style.display = 'flex';
+        if (cm) {
+            updateConfigModalInfo();
+            cm.style.display = 'flex';
+        }
       } else {
         refreshDB(null, true);
       }
       loadDomains();
     }, 1000);
   }
+
+  switchRecentTab('recent');
 });
 // 🚀 Expose Globals for HTML onclick & Modules
 window.refreshDB = refreshDB;
@@ -698,30 +729,112 @@ window.saveManualConfig = saveManualConfig;
 window.showToast = showToast; // Used by viewer?
 window.renderGrid = renderGrid; // Debugging
 
-window.saveReadHistory = async function(seriesId, seriesName) {
+const BOOKMARK_CATEGORIES = ['Webtoon', 'Manga', 'Novel'];
+
+function getSeriesMeta(seriesId) {
+    return allSeries.find(series => series.id === seriesId);
+}
+
+function normalizeBookmarkItem(item) {
+    const meta = getSeriesMeta(item.seriesId) || {};
+    return {
+        ...item,
+        name: item.name || meta.name || 'Unknown',
+        category: item.category || meta.category || (meta.metadata ? meta.metadata.category : null) || 'Webtoon',
+        epName: item.epName || item.epId || null
+    };
+}
+
+window.saveBookmarkRecord = async function(seriesId, seriesName, epId = null, epName = null, category = null) {
     try {
-        await API.request('view_save_bookmark', {
-            folderId: API.folderId, seriesId: seriesId, name: seriesName, time: new Date().getTime()
-        });
-        loadHistory();
-    } catch (e) { console.log("기록 저장 실패"); }
+        const payload = {
+            folderId: API.folderId,
+            seriesId: seriesId,
+            name: seriesName,
+            epId: epId,
+            epName: epName,
+            category: category,
+            time: new Date().getTime()
+        };
+        await API.request('view_save_bookmark', payload);
+        if (typeof showToast === 'function') showToast("🔖 북마크가 저장되었습니다.");
+        loadBookmarkData();
+    } catch (e) {
+        console.log("기록 저장 실패");
+    }
 };
 
-async function loadHistory() {
-    const container = document.getElementById('recentList');
-    if (!container) return;
+window.switchRecentTab = function(tab) {
+    const recentList = document.getElementById('recentList');
+    const bookmarkList = document.getElementById('bookmarkList');
+    const recentBtn = document.getElementById('recentTabBtn');
+    const bookmarkBtn = document.getElementById('bookmarkTabBtn');
+
+    if (!recentList || !bookmarkList) return;
+    const isRecent = tab === 'recent';
+
+    recentList.style.display = isRecent ? 'flex' : 'none';
+    bookmarkList.style.display = isRecent ? 'none' : 'flex';
+    if (recentBtn) recentBtn.classList.toggle('active', isRecent);
+    if (bookmarkBtn) bookmarkBtn.classList.toggle('active', !isRecent);
+};
+
+window.openBookmarkItem = function(seriesId, seriesName, epId) {
+    if (!seriesId) return;
+    openEpisodeList(seriesId, seriesName || 'Unknown', 0, epId);
+};
+
+async function loadBookmarkData() {
+    const recentContainer = document.getElementById('recentList');
+    const bookmarkContainer = document.getElementById('bookmarkList');
+    if (!recentContainer || !bookmarkContainer) return;
+
     try {
         const res = await API.request('view_get_bookmarks', { folderId: API.folderId });
-        if (!res) return;
-        container.innerHTML = '';
-        Object.values(res).sort((a,b) => b.time - a.time).slice(0, 6).forEach(item => {
+        const items = Object.values(res || {})
+            .map(normalizeBookmarkItem)
+            .sort((a, b) => (b.time || 0) - (a.time || 0));
+
+        recentContainer.innerHTML = '';
+        bookmarkContainer.innerHTML = '';
+
+        if (!items.length) {
+            recentContainer.innerHTML = '<div style="color:#666; font-size:12px;">최근 기록이 없습니다.</div>';
+            bookmarkContainer.innerHTML = '<div style="color:#666; font-size:12px;">북마크가 없습니다.</div>';
+            return;
+        }
+
+        const latestByCategory = {};
+        items.forEach(item => {
+            const category = item.category || 'Webtoon';
+            if (!latestByCategory[category]) latestByCategory[category] = item;
+        });
+
+        BOOKMARK_CATEGORIES.forEach(category => {
+            const item = latestByCategory[category];
             const div = document.createElement('div');
             div.className = 'recent-item';
-            div.innerText = `📖 ${item.name}`;
-            div.onclick = () => openEpisodeList(item.seriesId, item.name, 0);
-            container.appendChild(div);
+            if (!item) {
+                div.innerText = `📖 ${category}: 없음`;
+            } else {
+                const epLabel = item.epName ? ` · ${item.epName}` : '';
+                div.innerText = `📖 ${category}: ${item.name}${epLabel}`;
+                div.onclick = () => window.openBookmarkItem(item.seriesId, item.name, item.epId);
+            }
+            recentContainer.appendChild(div);
         });
-    } catch (e) { console.log("기록 로드 실패"); }
+
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'recent-item';
+            const epLabel = item.epName ? ` · ${item.epName}` : '';
+            div.innerText = `🔖 ${item.name}${epLabel}`;
+            div.onclick = () => window.openBookmarkItem(item.seriesId, item.name, item.epId);
+            bookmarkContainer.appendChild(div);
+        });
+    } catch (e) {
+        console.log("기록 로드 실패");
+    }
 
 
     /* ============================
@@ -729,8 +842,11 @@ async function loadHistory() {
  * ============================ */
 (function () {
   const STATE = {
-    fontPx: parseInt(localStorage.getItem("toki_font_px") || "18", 10),
+    fontPx: parseInt(localStorage.getItem("toki_v_fontsize") || localStorage.getItem("toki_font_px") || "18", 10),
   };
+
+  const FONT_STORAGE_KEY = "toki_v_fontsize";
+  const LEGACY_FONT_STORAGE_KEY = "toki_font_px";
 
   function qs(id) { return document.getElementById(id); }
 
@@ -847,18 +963,26 @@ async function loadHistory() {
 
   function applyFontPx(px) {
     STATE.fontPx = Math.max(12, Math.min(40, px));
-    localStorage.setItem("toki_font_px", String(STATE.fontPx));
+    localStorage.setItem(FONT_STORAGE_KEY, String(STATE.fontPx));
+    localStorage.setItem(LEGACY_FONT_STORAGE_KEY, String(STATE.fontPx));
 
     const scrollEl = getScrollEl();
-    if (!scrollEl) return;
+    const textContainer = document.querySelector(".book-container .inner-content");
 
-    // Foliate/Legacy EPUB 공통: epub-content 전체에 폰트 사이즈 적용
-    const targets = scrollEl.querySelectorAll(".epub-content, .epub-content *");
-    targets.forEach(el => {
-      // 너무 과격하면 .epub-content에만 적용하도록 바꿔도 됨
-      el.style.fontSize = STATE.fontPx + "px";
-      el.style.lineHeight = "1.8";
-    });
+    if (scrollEl) {
+      // Foliate/Legacy EPUB 공통: epub-content 전체에 폰트 사이즈 적용
+      const targets = scrollEl.querySelectorAll(".epub-content, .epub-content *");
+      targets.forEach(el => {
+        // 너무 과격하면 .epub-content에만 적용하도록 바꿔도 됨
+        el.style.fontSize = STATE.fontPx + "px";
+        el.style.lineHeight = "1.8";
+      });
+    }
+
+    if (textContainer) {
+      textContainer.style.fontSize = STATE.fontPx + "px";
+      textContainer.style.lineHeight = "1.8";
+    }
   }
 
   function wireFontButtons() {
@@ -871,10 +995,26 @@ async function loadHistory() {
     btns.forEach(b => {
       const txt = (b.innerText || "").trim();
       if (txt === "가-") {
-        b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); applyFontPx(STATE.fontPx - 2); };
+        b.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof window.changeFontSize === "function") {
+            window.changeFontSize(-2);
+          } else {
+            applyFontPx(STATE.fontPx - 2);
+          }
+        };
       }
       if (txt === "가+") {
-        b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); applyFontPx(STATE.fontPx + 2); };
+        b.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof window.changeFontSize === "function") {
+            window.changeFontSize(2);
+          } else {
+            applyFontPx(STATE.fontPx + 2);
+          }
+        };
       }
     });
   }
