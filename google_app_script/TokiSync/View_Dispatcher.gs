@@ -9,6 +9,16 @@
  * @param {Object} data - 클라이언트 요청 페이로드
  * @returns {TextOutput} JSON 응답
  */
+function View_requireHandler(handlerName, hint) {
+  if (typeof this[handlerName] !== "function") {
+    const message =
+      "Missing handler: " +
+      handlerName +
+      (hint ? " (" + hint + ")" : "");
+    throw new Error(message);
+  }
+}
+
 function View_Dispatcher(data) {
   try {
     const action = data.type; // Use 'type' to match TokiSync Main.gs convention
@@ -20,18 +30,42 @@ function View_Dispatcher(data) {
     if (action === "view_get_library") {
       if (!data.folderId) throw new Error("folderId is required for library");
       const bypassCache = data.bypassCache === true;
+      View_requireHandler(
+        "View_getSeriesList",
+        "include View_LibraryService.gs in your deployment"
+      );
       resultBody = View_getSeriesList(data.folderId, bypassCache);
     } else if (action === "view_get_books" || action === "view_refresh_cache") {
       if (!data.seriesId) throw new Error("seriesId is required for books");
       const bypassCache =
         data.bypassCache === true || action === "view_refresh_cache";
+      View_requireHandler(
+        "View_getBooks",
+        "include View_BookService.gs in your deployment"
+      );
       resultBody = View_getBooks(data.seriesId, bypassCache);
     } else if (action === "view_get_chunk") {
       if (!data.fileId) throw new Error("fileId is required");
       // Chunk logic
       const offset = data.offset || 0;
       const length = data.length || 10 * 1024 * 1024;
+      View_requireHandler(
+        "View_getFileChunk",
+        "include View_FileService.gs in your deployment"
+      );
       resultBody = View_getFileChunk(data.fileId, offset, length);
+    } else if (action === "view_get_bookmarks") {
+      View_requireHandler(
+        "View_getRecentBookmarks",
+        "include View_History_Service.gs in your deployment"
+      );
+      resultBody = View_getRecentBookmarks(folderId);
+    } else if (action === "view_save_bookmark") {
+      View_requireHandler(
+        "View_saveBookmark",
+        "include View_History_Service.gs in your deployment"
+      );
+      resultBody = View_saveBookmark(data, folderId);
     } else {
       throw new Error("Unknown Viewer Action: " + action);
     }

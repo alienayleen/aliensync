@@ -14,8 +14,14 @@ import { checkNextEpisodeTrigger, preloadNextEpisode } from './actions.js'; // C
 export function recalcSpreads(resetPage = false) {
     vState.spreads = [];
     const images = vState.images;
-    
-    if (vState.mode === '1page') {
+
+    const isNarrowViewport = () =>
+        typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(max-width: 820px)').matches;
+    const effectiveMode = (vState.mode === '2page' && isNarrowViewport()) ? '1page' : vState.mode;
+
+    if (effectiveMode === '1page') {
         for(let i=0; i<images.length; i++) vState.spreads.push([i]);
     } else {
         // 2-page logic
@@ -93,6 +99,10 @@ export function renderCurrentSpread() {
             </div>
         `).join('')}
     </div>`;
+
+    if (window.normalizeSinglePageSpread) {
+        window.normalizeSinglePageSpread();
+    }
     
     // Counter
     const start = spreadIndices[0] + 1;
