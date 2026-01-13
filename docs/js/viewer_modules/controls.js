@@ -126,7 +126,7 @@ export function togglePreloadMode() {
 }
 
 export function changeFontSize(delta) {
-    if (!vState.epubMode || !vState.foliateView) return;
+    if (!vState.epubMode) return;
     
     vState.textSettings.fontSize += delta;
     if(vState.textSettings.fontSize < 12) vState.textSettings.fontSize = 12;

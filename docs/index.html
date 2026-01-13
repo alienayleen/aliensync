@@ -50,6 +50,30 @@
         </div>
     </div>
 
+    <div id="configModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">🔌 서버 연결 설정</div>
+                <button class="modal-close" onclick="document.getElementById('configModal').style.display='none'">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="config-group">
+                    <div style="color:#888; font-size:12px; margin-bottom:6px;">접속 주소: <span id="configHost">-</span></div>
+                    <div style="color:#888; font-size:12px;">현재 API 주소: <span id="configApiHint">-</span></div>
+                </div>
+                <div class="config-group">
+                    <label>API URL</label>
+                    <input id="configApiUrl" class="config-input" placeholder="https://script.google.com/macros/s/..." />
+                </div>
+                <div class="config-group">
+                    <label>Root Folder ID</label>
+                    <input id="configFolderId" class="config-input" placeholder="Google Drive Folder ID" />
+                </div>
+                <button class="btn-save" onclick="saveManualConfig()">저장</button>
+            </div>
+        </div>
+    </div>
+
     <div id="viewerOverlay" class="viewer-overlay">
     <div id="viewerControls" class="viewer-controls">
         <div class="viewer-header">

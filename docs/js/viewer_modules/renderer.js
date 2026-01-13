@@ -93,6 +93,10 @@ export function renderCurrentSpread() {
             </div>
         `).join('')}
     </div>`;
+
+    if (window.normalizeSinglePageSpread) {
+        window.normalizeSinglePageSpread();
+    }
     
     // Counter
     const start = spreadIndices[0] + 1;
