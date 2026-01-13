@@ -730,29 +730,9 @@ window.showToast = showToast; // Used by viewer?
 window.renderGrid = renderGrid; // Debugging
 
 const BOOKMARK_CATEGORIES = ['Webtoon', 'Manga', 'Novel'];
-const LOCAL_BOOKMARK_KEY = 'toki_local_bookmarks';
 
 function getSeriesMeta(seriesId) {
     return allSeries.find(series => series.id === seriesId);
-}
-
-function getLocalBookmarks() {
-    const json = localStorage.getItem(LOCAL_BOOKMARK_KEY);
-    return json ? JSON.parse(json) : {};
-}
-
-function setLocalBookmarks(map) {
-    localStorage.setItem(LOCAL_BOOKMARK_KEY, JSON.stringify(map || {}));
-}
-
-function mergeBookmarkMaps(serverMap = {}, localMap = {}) {
-    const merged = { ...serverMap };
-    Object.entries(localMap).forEach(([key, item]) => {
-        if (!merged[key] || (item.time || 0) > (merged[key].time || 0)) {
-            merged[key] = item;
-        }
-    });
-    return merged;
 }
 
 function normalizeBookmarkItem(item) {
@@ -766,26 +746,21 @@ function normalizeBookmarkItem(item) {
 }
 
 window.saveBookmarkRecord = async function(seriesId, seriesName, epId = null, epName = null, category = null) {
-    const payload = {
-        folderId: API.folderId,
-        seriesId: seriesId,
-        name: seriesName,
-        epId: epId,
-        epName: epName,
-        category: category,
-        time: new Date().getTime()
-    };
     try {
+        const payload = {
+            folderId: API.folderId,
+            seriesId: seriesId,
+            name: seriesName,
+            epId: epId,
+            epName: epName,
+            category: category,
+            time: new Date().getTime()
+        };
         await API.request('view_save_bookmark', payload);
         if (typeof showToast === 'function') showToast("🔖 북마크가 저장되었습니다.");
         loadBookmarkData();
     } catch (e) {
-        const local = getLocalBookmarks();
-        local[seriesId] = payload;
-        setLocalBookmarks(local);
-        if (typeof showToast === 'function') {
-            showToast("⚠️ 서버 저장 실패: 로컬에 임시 저장되었습니다.", 4000);
-        }
+        console.log("기록 저장 실패");
     }
 };
 
@@ -816,8 +791,7 @@ async function loadBookmarkData() {
 
     try {
         const res = await API.request('view_get_bookmarks', { folderId: API.folderId });
-        const merged = mergeBookmarkMaps(res || {}, getLocalBookmarks());
-        const items = Object.values(merged)
+        const items = Object.values(res || {})
             .map(normalizeBookmarkItem)
             .sort((a, b) => (b.time || 0) - (a.time || 0));
 
@@ -859,47 +833,7 @@ async function loadBookmarkData() {
             bookmarkContainer.appendChild(div);
         });
     } catch (e) {
-        const items = Object.values(getLocalBookmarks())
-            .map(normalizeBookmarkItem)
-            .sort((a, b) => (b.time || 0) - (a.time || 0));
-
-        recentContainer.innerHTML = '';
-        bookmarkContainer.innerHTML = '';
-
-        if (!items.length) {
-            recentContainer.innerHTML = '<div style="color:#666; font-size:12px;">최근 기록이 없습니다.</div>';
-            bookmarkContainer.innerHTML = '<div style="color:#666; font-size:12px;">북마크가 없습니다.</div>';
-            return;
-        }
-
-        const latestByCategory = {};
-        items.forEach(item => {
-            const category = item.category || 'Webtoon';
-            if (!latestByCategory[category]) latestByCategory[category] = item;
-        });
-
-        BOOKMARK_CATEGORIES.forEach(category => {
-            const item = latestByCategory[category];
-            const div = document.createElement('div');
-            div.className = 'recent-item';
-            if (!item) {
-                div.innerText = `📖 ${category}: 없음`;
-            } else {
-                const epLabel = item.epName ? ` · ${item.epName}` : '';
-                div.innerText = `📖 ${category}: ${item.name}${epLabel}`;
-                div.onclick = () => window.openBookmarkItem(item.seriesId, item.name, item.epId);
-            }
-            recentContainer.appendChild(div);
-        });
-
-        items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'recent-item';
-            const epLabel = item.epName ? ` · ${item.epName}` : '';
-            div.innerText = `🔖 ${item.name}${epLabel}`;
-            div.onclick = () => window.openBookmarkItem(item.seriesId, item.name, item.epId);
-            bookmarkContainer.appendChild(div);
-        });
+        console.log("기록 로드 실패");
     }
 
 
