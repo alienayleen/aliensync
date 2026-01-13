@@ -50,6 +50,83 @@
         </div>
     </div>
 
+    <div id="configModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">🔌 서버 연결 설정</div>
+                <button class="modal-close" onclick="document.getElementById('configModal').style.display='none'">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="config-group">
+                    <div style="color:#888; font-size:12px; margin-bottom:6px;">접속 주소: <span id="configHost">-</span></div>
+                    <div style="color:#888; font-size:12px;">현재 API 주소: <span id="configApiHint">-</span></div>
+                </div>
+                <div class="config-group">
+                    <label>API URL</label>
+                    <input id="configApiUrl" class="config-input" placeholder="https://script.google.com/macros/s/..." />
+                </div>
+                <div class="config-group">
+                    <label>Root Folder ID</label>
+                    <input id="configFolderId" class="config-input" placeholder="Google Drive Folder ID" />
+                </div>
+                <button class="btn-save" onclick="saveManualConfig()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="domainPanel" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">⚙️ 사이트/뷰어 설정</div>
+                <button class="modal-close" onclick="document.getElementById('domainPanel').style.display='none'">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="config-group">
+                    <label>NewToki 도메인 번호</label>
+                    <input id="url_newtoki" class="config-input" placeholder="예: 123" />
+                </div>
+                <div class="config-group">
+                    <label>ManaToki 도메인 번호</label>
+                    <input id="url_manatoki" class="config-input" placeholder="예: 456" />
+                </div>
+                <div class="config-group">
+                    <label>BookToki 도메인 번호</label>
+                    <input id="url_booktoki" class="config-input" placeholder="예: 789" />
+                </div>
+                <div class="config-group">
+                    <label>GAS 배포 ID</label>
+                    <input id="setting_deployId" class="config-input" placeholder="Deployment ID" />
+                </div>
+                <div class="config-group">
+                    <label>Root Folder ID</label>
+                    <input id="setting_folderId" class="config-input" placeholder="Google Drive Folder ID" />
+                </div>
+                <div class="config-group">
+                    <label>뷰어 기본 설정</label>
+                    <div>
+                        <label><input type="checkbox" id="pref_2page"> 2페이지 보기</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" id="pref_cover"> 표지 우선</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" id="pref_rtl"> RTL 모드</label>
+                    </div>
+                </div>
+                <div class="config-group">
+                    <label>뷰어 엔진</label>
+                    <div>
+                        <label><input type="radio" name="view_engine" value="legacy" checked> Legacy</label>
+                    </div>
+                    <div>
+                        <label><input type="radio" name="view_engine" value="new"> New</label>
+                    </div>
+                </div>
+                <button class="btn-save" onclick="saveActiveSettings()">저장</button>
+            </div>
+        </div>
+    </div>
+
     <div id="viewerOverlay" class="viewer-overlay">
     <div id="viewerControls" class="viewer-controls">
         <div class="viewer-header">
