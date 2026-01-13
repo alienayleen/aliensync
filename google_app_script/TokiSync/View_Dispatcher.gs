@@ -54,6 +54,18 @@ function View_Dispatcher(data) {
         "include View_FileService.gs in your deployment"
       );
       resultBody = View_getFileChunk(data.fileId, offset, length);
+    } else if (action === "view_get_bookmarks") {
+      View_requireHandler(
+        "View_getRecentBookmarks",
+        "include View_History_Service.gs in your deployment"
+      );
+      resultBody = View_getRecentBookmarks(folderId);
+    } else if (action === "view_save_bookmark") {
+      View_requireHandler(
+        "View_saveBookmark",
+        "include View_History_Service.gs in your deployment"
+      );
+      resultBody = View_saveBookmark(data, folderId);
     } else {
       throw new Error("Unknown Viewer Action: " + action);
     }

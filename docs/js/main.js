@@ -131,6 +131,7 @@ async function refreshDB(forceId = null, silent = false, bypassCache = false) {
         }
 
         renderGrid(allSeries);
+        loadBookmarkData();
         showToast("📚 라이브러리 업데이트 완료");
 
     } catch (e) {
@@ -191,7 +192,7 @@ function renderGrid(seriesList) {
                     <a href="https://drive.google.com/drive/u/0/folders/${series.id}" target="_blank" class="btn btn-drive">📂 드라이브</a>
 
                     <button
-                        onclick="openEpisodeList('${series.id}', '${safeName}', ${index});"
+                        onclick="try{ saveBookmarkRecord('${series.id}', '${safeName}', null, null, '${category}'); }catch(e){}; openEpisodeList('${series.id}', '${safeName}', ${index}, null, '${category}');"
                         class="btn"
                         style="background:#444; color:white;"
                     >📄 목록</button>
@@ -716,6 +717,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 1000);
   }
 
+  switchRecentTab('recent');
 });
 // 🚀 Expose Globals for HTML onclick & Modules
 window.refreshDB = refreshDB;
@@ -726,6 +728,113 @@ window.saveActiveSettings = saveActiveSettings;
 window.saveManualConfig = saveManualConfig;
 window.showToast = showToast; // Used by viewer?
 window.renderGrid = renderGrid; // Debugging
+
+const BOOKMARK_CATEGORIES = ['Webtoon', 'Manga', 'Novel'];
+
+function getSeriesMeta(seriesId) {
+    return allSeries.find(series => series.id === seriesId);
+}
+
+function normalizeBookmarkItem(item) {
+    const meta = getSeriesMeta(item.seriesId) || {};
+    return {
+        ...item,
+        name: item.name || meta.name || 'Unknown',
+        category: item.category || meta.category || (meta.metadata ? meta.metadata.category : null) || 'Webtoon',
+        epName: item.epName || item.epId || null
+    };
+}
+
+window.saveBookmarkRecord = async function(seriesId, seriesName, epId = null, epName = null, category = null) {
+    try {
+        const payload = {
+            folderId: API.folderId,
+            seriesId: seriesId,
+            name: seriesName,
+            epId: epId,
+            epName: epName,
+            category: category,
+            time: new Date().getTime()
+        };
+        await API.request('view_save_bookmark', payload);
+        if (typeof showToast === 'function') showToast("🔖 북마크가 저장되었습니다.");
+        loadBookmarkData();
+    } catch (e) {
+        console.log("기록 저장 실패");
+    }
+};
+
+window.switchRecentTab = function(tab) {
+    const recentList = document.getElementById('recentList');
+    const bookmarkList = document.getElementById('bookmarkList');
+    const recentBtn = document.getElementById('recentTabBtn');
+    const bookmarkBtn = document.getElementById('bookmarkTabBtn');
+
+    if (!recentList || !bookmarkList) return;
+    const isRecent = tab === 'recent';
+
+    recentList.style.display = isRecent ? 'flex' : 'none';
+    bookmarkList.style.display = isRecent ? 'none' : 'flex';
+    if (recentBtn) recentBtn.classList.toggle('active', isRecent);
+    if (bookmarkBtn) bookmarkBtn.classList.toggle('active', !isRecent);
+};
+
+window.openBookmarkItem = function(seriesId, seriesName, epId) {
+    if (!seriesId) return;
+    openEpisodeList(seriesId, seriesName || 'Unknown', 0, epId);
+};
+
+async function loadBookmarkData() {
+    const recentContainer = document.getElementById('recentList');
+    const bookmarkContainer = document.getElementById('bookmarkList');
+    if (!recentContainer || !bookmarkContainer) return;
+
+    try {
+        const res = await API.request('view_get_bookmarks', { folderId: API.folderId });
+        const items = Object.values(res || {})
+            .map(normalizeBookmarkItem)
+            .sort((a, b) => (b.time || 0) - (a.time || 0));
+
+        recentContainer.innerHTML = '';
+        bookmarkContainer.innerHTML = '';
+
+        if (!items.length) {
+            recentContainer.innerHTML = '<div style="color:#666; font-size:12px;">최근 기록이 없습니다.</div>';
+            bookmarkContainer.innerHTML = '<div style="color:#666; font-size:12px;">북마크가 없습니다.</div>';
+            return;
+        }
+
+        const latestByCategory = {};
+        items.forEach(item => {
+            const category = item.category || 'Webtoon';
+            if (!latestByCategory[category]) latestByCategory[category] = item;
+        });
+
+        BOOKMARK_CATEGORIES.forEach(category => {
+            const item = latestByCategory[category];
+            const div = document.createElement('div');
+            div.className = 'recent-item';
+            if (!item) {
+                div.innerText = `📖 ${category}: 없음`;
+            } else {
+                const epLabel = item.epName ? ` · ${item.epName}` : '';
+                div.innerText = `📖 ${category}: ${item.name}${epLabel}`;
+                div.onclick = () => window.openBookmarkItem(item.seriesId, item.name, item.epId);
+            }
+            recentContainer.appendChild(div);
+        });
+
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'recent-item';
+            const epLabel = item.epName ? ` · ${item.epName}` : '';
+            div.innerText = `🔖 ${item.name}${epLabel}`;
+            div.onclick = () => window.openBookmarkItem(item.seriesId, item.name, item.epId);
+            bookmarkContainer.appendChild(div);
+        });
+    } catch (e) {
+        console.log("기록 로드 실패");
+    }
 
 
     /* ============================

@@ -6,7 +6,7 @@ import { loadViewer } from './actions.js';
 /**
  * 회차 목록 UI를 렌더링합니다.
  */
-export function renderEpisodeList(books, seriesId) {
+export function renderEpisodeList(books, seriesId, seriesName = null, seriesCategory = null) {
     updateCurrentBookList(books || []);
     const listEl = document.getElementById('episodeList');
     listEl.innerHTML = '';
@@ -19,6 +19,8 @@ export function renderEpisodeList(books, seriesId) {
 
     books.forEach((book, index) => {
         book.seriesId = seriesId;
+        if (seriesName) book.seriesName = seriesName;
+        if (seriesCategory) book.category = seriesCategory;
         const div = document.createElement('div');
         div.className = 'episode-item';
 

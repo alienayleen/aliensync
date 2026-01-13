@@ -445,29 +445,29 @@ function View_Dispatcher(data) {
     const folderId = data.folderId;
     let resultBody = null;
 
-  if (action === "view_get_library") {
-    View_requireHandler(
-      "View_getSeriesList",
-      "include View_LibraryService.gs in your deployment"
-    );
-    resultBody = View_getSeriesList(data.folderId);
-  } else if (action === "view_get_books" || action === "view_refresh_cache") {
-    const bypassCache = data.bypassCache === true || action === "view_refresh_cache";
-    View_requireHandler(
-      "View_getBooks",
-      "include View_BookService.gs in your deployment"
-    );
-    resultBody = View_getBooks(data.seriesId, bypassCache);
-  } else if (action === "view_get_chunk") {
-    View_requireHandler(
-      "View_getFileChunk",
-      "include View_FileService.gs in your deployment"
-    );
-    resultBody = View_getFileChunk(data.fileId, data.offset || 0, data.length || 10485760);
-  } else {
-    throw new Error("Unknown Viewer Action: " + action);
-  }
-  return createRes("success", resultBody);
+    if (action === "view_get_library") {
+      View_requireHandler(
+        "View_getSeriesList",
+        "include View_LibraryService.gs in your deployment"
+      );
+      resultBody = View_getSeriesList(data.folderId);
+    } else if (action === "view_get_books" || action === "view_refresh_cache") {
+      const bypassCache = data.bypassCache === true || action === "view_refresh_cache";
+      View_requireHandler(
+        "View_getBooks",
+        "include View_BookService.gs in your deployment"
+      );
+      resultBody = View_getBooks(data.seriesId, bypassCache);
+    } else if (action === "view_get_chunk") {
+      View_requireHandler(
+        "View_getFileChunk",
+        "include View_FileService.gs in your deployment"
+      );
+      resultBody = View_getFileChunk(data.fileId, data.offset || 0, data.length || 10485760);
+    } else {
+      throw new Error("Unknown Viewer Action: " + action);
+    }
+    return createRes("success", resultBody);
   } catch (e) {
     return createRes("error", e.toString());
   }
@@ -477,7 +477,54 @@ function View_Dispatcher(data) {
 /* FILE: View_Services.gs (Combined) */
 /* ========================================================================== */
 
+const HISTORY_FILE_NAME = "toki_history.json";
 const INDEX_FILE_NAME = "library_index.json";
+
+function View_saveBookmark(data, rootFolderId) {
+  const root = DriveApp.getFolderById(rootFolderId);
+  let file;
+  const files = root.getFilesByName(HISTORY_FILE_NAME);
+
+  if (files.hasNext()) {
+    file = files.next();
+  } else {
+    file = root.createFile(HISTORY_FILE_NAME, "{}", MimeType.PLAIN_TEXT);
+  }
+
+  let history = {};
+  try {
+    const content = file.getBlob().getDataAsString();
+    history = JSON.parse(content || "{}");
+  } catch (e) {
+    history = {};
+  }
+
+  history[data.seriesId] = {
+    seriesId: data.seriesId,
+    name: data.name || "Unknown",
+    epId: data.epId,
+    page: data.page || 0,
+    time: new Date().getTime(),
+  };
+
+  file.setContent(JSON.stringify(history));
+  return history;
+}
+
+function View_getRecentBookmarks(rootFolderId) {
+  const root = DriveApp.getFolderById(rootFolderId);
+  const files = root.getFilesByName(HISTORY_FILE_NAME);
+
+  if (files.hasNext()) {
+    try {
+      const content = files.next().getBlob().getDataAsString();
+      return JSON.parse(content);
+    } catch (e) {
+      return {};
+    }
+  }
+  return {};
+}
 
 function View_getSeriesList(folderId) {
   const root = DriveApp.getFolderById(folderId);
