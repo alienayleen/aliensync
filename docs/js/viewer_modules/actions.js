@@ -36,6 +36,16 @@ export async function loadViewer(index, isContinuous = false) {
     updateCurrentBookIndex(index);
     loadViewerSettings();
 
+    const isNarrowViewport = () =>
+        typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(max-width: 820px)').matches;
+
+    if (isNarrowViewport()) {
+        vState.scrollMode = true;
+        localStorage.setItem('toki_v_scroll', 'true');
+    }
+
     const viewer = document.getElementById('viewerOverlay');
     const content = document.getElementById('viewerContent');
     const container = document.getElementById('viewerImageContainer');

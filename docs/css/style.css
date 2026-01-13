@@ -921,6 +921,27 @@ foliate-view {
     display: none; /* Hidden by default, shown in Text Mode */
 }
 
+.book-container.text-scroll-mode {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    overflow-y: auto;
+}
+
+.book-container.text-scroll-mode .text-columns {
+    column-width: auto;
+    column-count: 1;
+    height: auto;
+    transform: none;
+}
+
+.book-container.text-scroll-mode .side-tap,
+.book-container.text-scroll-mode .floating-controls {
+    display: none;
+}
+
 /* Multi-column Body */
 .text-columns {
     width: 100%;

@@ -239,6 +239,10 @@ export function scrollToPage(index) {
 export function renderLegacyMode(htmlContent) {
     const container = document.getElementById('viewerImageContainer');
     const scrollContainer = document.getElementById('viewerScrollContainer'); 
+    const isNarrowViewport = () =>
+        typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(max-width: 820px)').matches;
 
     // Hide Image Scroll Container
     if (scrollContainer) scrollContainer.style.display = 'none';
@@ -250,7 +254,7 @@ export function renderLegacyMode(htmlContent) {
 
     // 1. Inject Structure (Book Container)
     container.innerHTML = `
-        <div class="book-container" id="bookContainer" style="display:block;">
+        <div class="book-container${isNarrowViewport() ? ' text-scroll-mode' : ''}" id="bookContainer" style="display:block;">
             <div class="side-tap left-tap" onclick="navigateViewer(-1)"></div>
             <div class="side-tap right-tap" onclick="navigateViewer(1)"></div>
 
@@ -281,11 +285,24 @@ export function renderLegacyMode(htmlContent) {
 export function initTextPagination() {
     const textBody = document.getElementById('textBody');
     const container = document.getElementById('bookContainer');
+    const isNarrowViewport = () =>
+        typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(max-width: 820px)').matches;
     
     if (!textBody || !container) return;
 
     // Reset Transform
     textBody.style.transform = `translateX(0)`;
+
+    if (isNarrowViewport()) {
+        textBody.style.columnWidth = 'auto';
+        textBody.style.columnCount = '1';
+        vState.totalTextPages = 1;
+        vState.textPage = 0;
+        updateTextUI();
+        return;
+    }
     
     const totalWidth = textBody.scrollWidth;
     const viewWidth = container.clientWidth;
@@ -302,9 +319,15 @@ export function updateTextUI() {
     const indicator = document.getElementById('pageIndicatorFloat');
     const prevBtn = document.querySelector('.nav-btn.float:first-child'); // Quick select
     // Actually selectors via onclick might be safer or IDs
+    const isNarrowViewport = () =>
+        typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(max-width: 820px)').matches;
     
-    if (textBody) {
+    if (textBody && !isNarrowViewport()) {
         textBody.style.transform = `translateX(-${vState.textPage * 100}%)`;
+    } else if (textBody) {
+        textBody.style.transform = 'none';
     }
     
     if (indicator) {
